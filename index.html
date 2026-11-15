@@ -1691,7 +1691,7 @@
     });
   }
 
-  function pushInventoryToCloud(silent) {
+    function pushInventoryToCloud(silent) {
     const inputEl = document.getElementById("cloudUrlInput");
     if (inputEl && inputEl.value.trim()) {
       cloudUrl = inputEl.value.trim();
@@ -1710,53 +1710,25 @@
     isSyncing = true;
     setSyncIndicator("Pushing Stock & Logs...", "syncing");
 
-    // If manual Force Push, also make sure we grab any past sales from the original Google Sheet so nothing is left behind
-    const LEGACY_GOOGLE_URL = "https://script.google.com/macros/s/AKfycbzFd6y6SsmrIp0MotfAe6auIwW-ek3023ydixUCY6ezQoB3d43JSbOHYvk4K_ef8TFPBA/exec";
-    const prepPromise = (!silent && cloudUrl !== LEGACY_GOOGLE_URL)
-      ? fetch(LEGACY_GOOGLE_URL + "?t=" + Date.now())
-          .then(function(r) { return r.json(); })
-          .then(function(oldData) {
-            if (oldData && Array.isArray(oldData.sales)) {
-              mergeCloudSalesWithLocal(oldData.sales);
-            }
-            if (oldData && Array.isArray(oldData.inventory) && oldData.inventory.length > 0) {
-              oldData.inventory.forEach(function(oldItem) {
-                const match = inventory.find(function(loc) {
-                  return loc.id == oldItem.id || String(loc.name).toLowerCase() === String(oldItem.name || "").toLowerCase();
-                });
-                if (match && !isNaN(parseInt(oldItem.stock, 10))) {
-                  match.stock = parseInt(oldItem.stock, 10);
-                }
-              });
-            }
-            saveState();
-            renderGrid();
-            if (isLogsModalOpen()) renderSalesLogTable();
-          })
-          .catch(function() {})
-      : Promise.resolve();
+    const cleanInv = getCleanInventoryForCloud();
+    const payload = {
+      action: "syncInventory",
+      inventory: cleanInv,
+      sales: salesLog.slice().reverse()
+    };
+    if (!isGoogleAppsScriptUrl(cloudUrl)) {
+      payload.inventoryJson = JSON.stringify(cleanInv);
+      payload.salesJson = JSON.stringify(salesLog);
+    }
 
-    prepPromise.then(function() {
-      const cleanInv = getCleanInventoryForCloud();
-      const payload = {
-        action: "syncInventory",
-        inventory: cleanInv,
-        sales: salesLog.slice().reverse()
-      };
-      if (!isGoogleAppsScriptUrl(cloudUrl)) {
-        payload.inventoryJson = JSON.stringify(cleanInv);
-        payload.salesJson = JSON.stringify(salesLog);
-      }
-
-      return postPayloadToCloud(payload);
-    }).then(function() {
+    postPayloadToCloud(payload).then(function() {
       isSyncing = false;
       inventoryDirty = false;
       hasPulledCloudStock = true;
       cloudStockLoadedThisSession = true;
       updateCloudBadge();
       renderGrid();
-      if (!silent) alert("Success! All 8 items, your current stock counts, all 7 photos, AND your full Sales History have been pushed to your new Booster Club Sheet!");
+      if (!silent) alert("Success! Your current inventory, custom item order, stock counts, and photos have been pushed to your Booster Club Google Sheet!");
     }).catch(function() {
       isSyncing = false;
       setSyncIndicator("Offline (Saved Locally)", "offline");
