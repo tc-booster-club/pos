@@ -1156,12 +1156,12 @@
 
 <script>
   // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL BETWEEN THE QUOTES BELOW:
-  const DEFAULT_CLOUD_URL = "https://script.google.com/macros/s/AKfycbzFd6y6SsmrIp0MotfAe6auIwW-ek3023ydixUCY6ezQoB3d43JSbOHYvk4K_ef8TFPBA/exec";
+  const DEFAULT_CLOUD_URL = "https://script.google.com/macros/s/AKfycbyEGbiHjh0CXwfSlivzGcJG-CSkJVECy-z-qEw3jAG8J0Z1jqnuwMQAosgyTooVBw7w/exec";
 
   // 4-DIGIT BOOSTER CLUB PIN CODE (Change below or via Inventory settings):
   const DEFAULT_APP_PIN = "2013";
 
-    // DEFAULT BOOSTER CLUB SELLERS ROSTER (Manage inside 'Inventory & Sellers' modal):
+  // DEFAULT BOOSTER CLUB SELLERS ROSTER (Manage inside 'Inventory & Sellers' modal):
   const defaultSellers = ["TSgt Vaidya", "MSgt Dunn"];
 
   const PATCH_DISCOUNT_PRICE = 7.50;
@@ -1172,7 +1172,7 @@
         "id": 3,
         "name": "Spinner Coin",
         "price": 15,
-        "stock": 63,
+        "stock": 42,
         "image": "data:image/jpeg;base64,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",
         "isPatchDeal": false
     },
@@ -1234,7 +1234,7 @@
     }
 ];
 
- const memoryFallbackStore = {};
+  const memoryFallbackStore = {};
   function safeGetStorage(key) {
     try {
       return window.localStorage.getItem(key);
@@ -1290,6 +1290,7 @@
   }
 
   const SETTINGS_ROW_NAME = "__BOOSTER_SETTINGS__";
+  const LEGACY_CLOUD_URL = "https://script.google.com/macros/s/AKfycbzFd6y6SsmrIp0MotfAe6auIwW-ek3023ydixUCY6ezQoB3d43JSbOHYvk4K_ef8TFPBA/exec";
 
   function isSettingsRow(item) {
     if (!item) return false;
@@ -1352,7 +1353,7 @@
   let offlineQueue = safeParseJSON("booster_offline_queue", []);
   if (!Array.isArray(offlineQueue)) offlineQueue = [];
 
-  // ALWAYS prioritize DEFAULT_CLOUD_URL so no computer ever gets stuck on an older cached Google Sheet link!
+  // ALWAYS prioritize DEFAULT_CLOUD_URL so every device connects to your active Google Sheet!
   let cloudUrl = DEFAULT_CLOUD_URL || safeGetStorage("booster_cloud_url");
   if (DEFAULT_CLOUD_URL) {
     safeSetStorage("booster_cloud_url", DEFAULT_CLOUD_URL);
@@ -1368,6 +1369,9 @@
   if (!baseStockMap || typeof baseStockMap !== "object") {
     baseStockMap = { "spinner coin": 100 };
   }
+  if (typeof baseStockMap["spinner coin"] !== "number") {
+    baseStockMap["spinner coin"] = 100;
+  }
   let activeSeller = safeGetSession("booster_session_seller") || "";
   let enteredPin = "";
 
@@ -1381,6 +1385,7 @@
   let cloudStockLoadedThisSession = !Boolean(cloudUrl);
   let logViewMode = "standard";
   let logDateFilter = "all";
+  let lastKnownSheetOrderIds = new Set();
 
   function getSoldQuantitiesFromLog() {
     const soldMap = {};
@@ -2328,26 +2333,51 @@
       return;
     }
     isSyncing = true;
-    setSyncIndicator("Pushing Stock...", "syncing");
+    setSyncIndicator("Pushing Stock & Logs...", "syncing");
+
+    // Always recalculate remaining stock from Base Stock minus Logged Sales before pushing!
+    applyBaseStockMath();
+    saveState();
 
     const cleanInv = getCleanInventoryForCloud();
-    // NEVER send sales inside syncInventory so a device with an older cache can NEVER wipe out the Google Sheet Sales Log!
-    const payload = {
+    const chronologicalSales = salesLog.slice().reverse();
+    const missingFromSheet = chronologicalSales.filter(function(s) {
+      return s && s.orderId && !lastKnownSheetOrderIds.has(String(s.orderId));
+    });
+
+    // If the Google Sheet is missing sales that are in our local log (e.g. from the previous script URL),
+    // send action: "recordSale" first so the Google Sheet writes every missing sale row to the Sales tab,
+    // AND then send action: "syncInventory" to update the Inventory tab!
+    const syncInvPayload = {
       action: "syncInventory",
-      inventory: cleanInv
+      inventory: cleanInv,
+      sales: chronologicalSales
     };
-    if (!isGoogleAppsScriptUrl(cloudUrl)) {
-      payload.inventoryJson = JSON.stringify(cleanInv);
+
+    let chain = Promise.resolve();
+    if (missingFromSheet.length > 0 && !silent) {
+      chain = postPayloadToCloud({
+        action: "recordSale",
+        sale: missingFromSheet[0],
+        sales: missingFromSheet,
+        inventory: cleanInv
+      });
     }
 
-    postPayloadToCloud(payload).then(function() {
+    chain.then(function() {
+      return postPayloadToCloud(syncInvPayload);
+    }).then(function() {
+      missingFromSheet.forEach(function(s) {
+        if (s && s.orderId) lastKnownSheetOrderIds.add(String(s.orderId));
+      });
       isSyncing = false;
       inventoryDirty = false;
       hasPulledCloudStock = true;
       cloudStockLoadedThisSession = true;
       updateCloudBadge();
       renderGrid();
-      if (!silent) alert("Success! Your current inventory, custom item order, stock counts, and seller settings have been pushed to your Booster Club Google Sheet!");
+      if (isInventoryModalOpen()) renderInventoryTable();
+      if (!silent) alert("Success! Pushed updated stock (Spinner Coin: " + (inventory.find(function(i){return /spinner/i.test(i.name);}) || {}).stock + ") and synced all " + salesLog.length + " sales orders to your Google Sheet!");
     }).catch(function() {
       isSyncing = false;
       setSyncIndicator("Offline (Saved Locally)", "offline");
@@ -2369,6 +2399,23 @@
     });
     salesLog = unsyncedLocal.concat(filteredCloud);
     syncSellersFromSalesLog();
+  }
+
+  // One-time automatic rescue of any sales sitting on the previous Google Apps Script URL
+  function rescueLegacyCloudSalesOnce() {
+    if (!LEGACY_CLOUD_URL || LEGACY_CLOUD_URL === cloudUrl || window._legacyRescueChecked) {
+      return Promise.resolve();
+    }
+    window._legacyRescueChecked = true;
+    const sep = LEGACY_CLOUD_URL.indexOf("?") !== -1 ? "&" : "?";
+    return fetch(LEGACY_CLOUD_URL + sep + "t=" + Date.now())
+      .then(function(res) { return res.ok ? res.json().catch(function() { return {}; }) : {}; })
+      .then(function(legacyData) {
+        if (legacyData && Array.isArray(legacyData.sales) && legacyData.sales.length > 0) {
+          mergeCloudSalesWithLocal(legacyData.sales);
+        }
+      })
+      .catch(function() {});
   }
 
   function pullInventoryFromCloud(silent) {
@@ -2396,6 +2443,9 @@
         return res.json().catch(function() { return {}; });
       })
       .then(function(data) {
+        return rescueLegacyCloudSalesOnce().then(function() { return data; });
+      })
+      .then(function(data) {
         isSyncing = false;
 
         if (data && typeof data.inventoryJson === "string" && data.inventoryJson) {
@@ -2406,6 +2456,7 @@
         }
 
         if (data && Array.isArray(data.sales)) {
+          lastKnownSheetOrderIds = new Set(data.sales.map(function(s) { return String((s && s.orderId) || ""); }));
           mergeCloudSalesWithLocal(data.sales);
         }
 
@@ -2498,6 +2549,7 @@
         } else {
           hasPulledCloudStock = true;
           cloudStockLoadedThisSession = true;
+          applyBaseStockMath();
           saveState();
           updateSellerUI();
           renderGrid();
@@ -2537,27 +2589,7 @@
       return;
     }
 
-    const soldMap = {};
-    salesLog.forEach(function(sale) {
-      if (!sale) return;
-      if (Array.isArray(sale.lineItems) && sale.lineItems.length > 0) {
-        sale.lineItems.forEach(function(li) {
-          const nameKey = String(li.itemName || "").trim().toLowerCase();
-          if (nameKey) {
-            soldMap[nameKey] = (soldMap[nameKey] || 0) + (parseInt(li.qty, 10) || 0);
-          }
-        });
-      } else if (sale.itemQuantities) {
-        Object.keys(sale.itemQuantities).forEach(function(k) {
-          const nameKey = String(k || "").trim().toLowerCase();
-          const q = parseInt(sale.itemQuantities[k], 10) || 0;
-          if (nameKey && q > 0) {
-            soldMap[nameKey] = (soldMap[nameKey] || 0) + q;
-          }
-        });
-      }
-    });
-
+    const soldMap = getSoldQuantitiesFromLog();
     const summaryLines = [];
     inventory.forEach(function(item) {
       const key = String(item.name || "").trim().toLowerCase();
