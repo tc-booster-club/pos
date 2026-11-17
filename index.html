@@ -1234,7 +1234,7 @@
     }
 ];
 
-  const memoryFallbackStore = {};
+ const memoryFallbackStore = {};
   function safeGetStorage(key) {
     try {
       return window.localStorage.getItem(key);
@@ -1289,7 +1289,7 @@
     return (match && match.image) ? match.image : "";
   }
 
-    const SETTINGS_ROW_NAME = "__BOOSTER_SETTINGS__";
+  const SETTINGS_ROW_NAME = "__BOOSTER_SETTINGS__";
 
   function isSettingsRow(item) {
     if (!item) return false;
@@ -1351,7 +1351,12 @@
   if (!Array.isArray(voidedOrderIds)) voidedOrderIds = [];
   let offlineQueue = safeParseJSON("booster_offline_queue", []);
   if (!Array.isArray(offlineQueue)) offlineQueue = [];
-  let cloudUrl = safeGetStorage("booster_cloud_url") || DEFAULT_CLOUD_URL;
+
+  // ALWAYS prioritize DEFAULT_CLOUD_URL so no computer ever gets stuck on an older cached Google Sheet link!
+  let cloudUrl = DEFAULT_CLOUD_URL || safeGetStorage("booster_cloud_url");
+  if (DEFAULT_CLOUD_URL) {
+    safeSetStorage("booster_cloud_url", DEFAULT_CLOUD_URL);
+  }
   let appPin = safeGetStorage("booster_app_pin") || DEFAULT_APP_PIN;
 
   let sellersRoster = safeParseJSON("booster_sellers_roster", defaultSellers);
@@ -1433,7 +1438,6 @@
   }
 
   function syncSellersFromSalesLog() {}
-
 
   function updateSellerUI() {
     const lbl = document.getElementById("activeSellerLabel");
@@ -1539,7 +1543,6 @@
     const isDevicePinUnlocked = safeGetStorage("booster_pin_unlocked") === "true";
 
     if (!isDevicePinUnlocked) {
-      // First time on this device: Ask for the 4-digit PIN first
       lockScreen.style.display = "flex";
       pinCard.style.display = "block";
       sellerCard.style.display = "none";
@@ -1547,7 +1550,6 @@
     }
 
     if (!activeSeller) {
-      // Device already unlocked PIN previously, but window was just opened: Show 1-tap Seller Picker!
       renderSellerPickerButtons();
       lockScreen.style.display = "flex";
       pinCard.style.display = "none";
@@ -1587,11 +1589,9 @@
     renderPinDots(false);
     if (enteredPin.length === 4) {
       if (enteredPin === String(appPin)) {
-        // Save permanent device unlock in localStorage so this device never asks for PIN again!
         safeSetStorage("booster_pin_unlocked", "true");
         enteredPin = "";
         renderPinDots(false);
-        // Immediately transition to the 1-tap Seller Picker
         showLockOrSellerScreen();
       } else {
         renderPinDots(true);
@@ -1684,6 +1684,7 @@
     recalculateRevenueBadge();
     safeSetStorage("booster_inventory", JSON.stringify(inventory));
     safeSetStorage("booster_sellers_roster", JSON.stringify(sellersRoster));
+    safeSetStorage("booster_base_stock_map", JSON.stringify(baseStockMap));
     safeSetStorage("booster_sales_today", totalSalesToday.toString());
     safeSetStorage("booster_sales_log", JSON.stringify(salesLog));
     safeSetStorage("booster_voided_orders", JSON.stringify(voidedOrderIds));
@@ -2120,7 +2121,6 @@
       }
     });
 
-    // Unique Order ID with random suffix so 2+ sellers clicking Complete Sale at the exact same millisecond never collide!
     const uniqueSuffix = Date.now().toString().slice(-5) + "-" + Math.floor(100 + Math.random() * 900);
     const saleRecord = {
       orderId: "ORD-" + uniqueSuffix,
@@ -2200,7 +2200,7 @@
     return String(url || "").indexOf("script.google.com") !== -1;
   }
 
-    function getCleanInventoryForCloud() {
+  function getCleanInventoryForCloud() {
     const itemsPayload = inventory
       .filter(function(i) { return i && !isSettingsRow(i); })
       .map(function(i) {
@@ -2321,23 +2321,23 @@
       return;
     }
     if (!hasPulledCloudStock || !cloudStockLoadedThisSession) {
-      if (silent && !inventoryDirty) {
-        pullInventoryFromCloud(true);
-        return;
+      pullInventoryFromCloud(true);
+      if (!silent) {
+        alert("Syncing latest cloud data first so recent sales are protected. Please click Force Push again in 2 seconds.");
       }
+      return;
     }
     isSyncing = true;
-    setSyncIndicator("Pushing Stock & Logs...", "syncing");
+    setSyncIndicator("Pushing Stock...", "syncing");
 
     const cleanInv = getCleanInventoryForCloud();
+    // NEVER send sales inside syncInventory so a device with an older cache can NEVER wipe out the Google Sheet Sales Log!
     const payload = {
       action: "syncInventory",
-      inventory: cleanInv,
-      sales: salesLog.slice().reverse()
+      inventory: cleanInv
     };
     if (!isGoogleAppsScriptUrl(cloudUrl)) {
       payload.inventoryJson = JSON.stringify(cleanInv);
-      payload.salesJson = JSON.stringify(salesLog);
     }
 
     postPayloadToCloud(payload).then(function() {
@@ -2347,7 +2347,7 @@
       cloudStockLoadedThisSession = true;
       updateCloudBadge();
       renderGrid();
-      if (!silent) alert("Success! Your current inventory, custom item order, stock counts, and photos have been pushed to your Booster Club Google Sheet!");
+      if (!silent) alert("Success! Your current inventory, custom item order, stock counts, and seller settings have been pushed to your Booster Club Google Sheet!");
     }).catch(function() {
       isSyncing = false;
       setSyncIndicator("Offline (Saved Locally)", "offline");
@@ -2584,6 +2584,7 @@
       const soldQty = soldMap[key] || 0;
       if (soldQty > 0) {
         item.stock = Math.max(0, (parseInt(item.stock, 10) || 0) - soldQty);
+        recordExplicitStockSet(item.name, item.stock);
       }
     });
 
@@ -2778,6 +2779,7 @@
       image: pendingNewImage,
       isPatchDeal: isPatchDeal
     });
+    recordExplicitStockSet(name, stock);
 
     document.getElementById("newItemName").value = "";
     document.getElementById("newItemPrice").value = "";
@@ -3308,10 +3310,13 @@
   function factoryResetApp() {
     if (confirm("Reset local browser cache and re-sync fresh stock, photos & logs from the cloud? (Your cloud inventory will NOT be overwritten)")) {
       safeRemoveStorage("booster_inventory");
+      safeRemoveStorage("booster_base_stock_map");
+      safeRemoveStorage("booster_sellers_roster");
       safeRemoveStorage("booster_sales_today");
       safeRemoveStorage("booster_sales_log");
       safeRemoveStorage("booster_offline_queue");
       safeRemoveStorage("booster_has_cloud_stock");
+      if (DEFAULT_CLOUD_URL) safeSetStorage("booster_cloud_url", DEFAULT_CLOUD_URL);
       location.reload();
     }
   }
