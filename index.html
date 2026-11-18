@@ -373,6 +373,48 @@
     }
     .change-amount { color: var(--success); font-size: 1.15rem; }
     .change-amount.short { color: var(--danger); }
+    .keep-change-row {
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dotted #cbd5e1;
+      gap: 8px;
+    }
+    .btn-keep-change {
+      width: 100%;
+      padding: 7px 10px;
+      border-radius: 6px;
+      border: 1px solid #86efac;
+      background: #f0fdf4;
+      color: #166534;
+      font-weight: 800;
+      font-size: 0.78rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+    .btn-keep-change:hover { background: #dcfce7; }
+    .btn-keep-change.active {
+      background: #16a34a;
+      color: white;
+      border-color: #15803d;
+      box-shadow: 0 1px 4px rgba(22,163,74,0.3);
+    }
+    .kept-change-badge {
+      display: inline-block;
+      margin-top: 2px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      background: #dcfce7;
+      color: #15803d;
+    }
 
     .electronic-banner {
       display: none;
@@ -1120,6 +1162,11 @@
           <span>Change Due:</span>
           <span class="change-amount" id="changeDue">$0.00</span>
         </div>
+        <div class="keep-change-row" id="keepChangeRow">
+          <button type="button" class="btn-keep-change" id="keepChangeBtn" onclick="toggleKeepChangeRefused()">
+            <span id="keepChangeBtnText">&#128154; Customer Refused Change? Tap to Keep Change in Box</span>
+          </button>
+        </div>
       </div>
 
       <div class="electronic-banner" id="electronicBanner">
@@ -1539,6 +1586,7 @@
 
   let cart = {};
   let currentPaymentMethod = "Cash";
+  let keepChangeRefused = false;
   let pendingNewImage = "";
   let pushDebounceTimer = null;
   let isSyncing = false;
@@ -1871,7 +1919,20 @@
     }
   }
 
+  function pruneVoidedFromOfflineQueue() {
+    if (!Array.isArray(offlineQueue) || offlineQueue.length === 0) return;
+    const voidSet = new Set((voidedOrderIds || []).map(String));
+    const beforeLen = offlineQueue.length;
+    offlineQueue = offlineQueue.filter(function(item) {
+      return item && item.orderId && !voidSet.has(String(item.orderId));
+    });
+    if (offlineQueue.length !== beforeLen) {
+      safeSetStorage("booster_offline_queue", JSON.stringify(offlineQueue));
+    }
+  }
+
   function updateCloudBadge() {
+    pruneVoidedFromOfflineQueue();
     const pendingBtn = document.getElementById("syncPendingBtn");
     if (pendingBtn) {
       pendingBtn.textContent = "Sync Pending (" + offlineQueue.length + ")";
@@ -2122,6 +2183,7 @@
 
   function clearCart() {
     cart = {};
+    keepChangeRefused = false;
     document.getElementById("cashInput").value = "";
     document.getElementById("buyerName").value = "";
     document.getElementById("buyerDirectorate").value = "";
@@ -2218,7 +2280,13 @@
   }
 
   function clearCash() {
+    keepChangeRefused = false;
     document.getElementById("cashInput").value = "";
+    updateChange();
+  }
+
+  function toggleKeepChangeRefused() {
+    keepChangeRefused = !keepChangeRefused;
     updateChange();
   }
 
@@ -2226,21 +2294,63 @@
     const total = getCartTotal();
     const cashVal = parseFloat(document.getElementById("cashInput").value);
     const changeEl = document.getElementById("changeDue");
+    const keepRow = document.getElementById("keepChangeRow");
+    const keepBtn = document.getElementById("keepChangeBtn");
+    const keepTxt = document.getElementById("keepChangeBtnText");
 
     if (isNaN(cashVal) || total === 0) {
+      keepChangeRefused = false;
       changeEl.textContent = "$0.00";
       changeEl.className = "change-amount";
+      if (keepRow) keepRow.style.display = "none";
       return;
     }
 
     const diff = cashVal - total;
-    if (diff >= 0) {
-      changeEl.textContent = "$" + diff.toFixed(2);
+    if (diff > 0.004) {
+      if (keepRow) keepRow.style.display = "flex";
+      if (keepChangeRefused) {
+        changeEl.textContent = "$0.00 (Keeping $" + diff.toFixed(2) + ")";
+        changeEl.className = "change-amount";
+        if (keepBtn) keepBtn.classList.add("active");
+        if (keepTxt) keepTxt.innerHTML = "&#10003; Keeping $" + diff.toFixed(2) + " Change in Cash Box (Tap to Undo)";
+      } else {
+        changeEl.textContent = "$" + diff.toFixed(2);
+        changeEl.className = "change-amount";
+        if (keepBtn) keepBtn.classList.remove("active");
+        if (keepTxt) keepTxt.innerHTML = "&#128154; Customer Refused Change? Tap to Keep $" + diff.toFixed(2) + " in Box";
+      }
+    } else if (diff >= -0.004) {
+      keepChangeRefused = false;
+      if (keepRow) keepRow.style.display = "none";
+      changeEl.textContent = "$0.00";
       changeEl.className = "change-amount";
     } else {
+      keepChangeRefused = false;
+      if (keepRow) keepRow.style.display = "none";
       changeEl.textContent = "Owes $" + Math.abs(diff).toFixed(2);
       changeEl.className = "change-amount short";
     }
+  }
+
+  function getOrderKeptChangeAmount(sale) {
+    if (!sale || (sale.paymentMethod || "Cash") !== "Cash") return 0;
+    const itemTotal = parseFloat(sale.total) || 0;
+    const paid = parseFloat(sale.cashPaid);
+    const chg = parseFloat(sale.change);
+    if (!isNaN(paid) && !isNaN(chg) && paid > itemTotal) {
+      const netKept = paid - chg;
+      const extra = netKept - itemTotal;
+      if (extra > 0.004) return Number(extra.toFixed(2));
+    }
+    return 0;
+  }
+
+  function getOrderNetCashForBox(sale) {
+    if (!sale || (sale.paymentMethod || "Cash") !== "Cash") return 0;
+    const itemTotal = parseFloat(sale.total) || 0;
+    const extraKept = getOrderKeptChangeAmount(sale);
+    return itemTotal + extraKept;
   }
 
   function getAllTimeCashSalesTotal() {
@@ -2249,8 +2359,18 @@
     salesLog.forEach(function(s) {
       if (!s) return;
       if ((s.paymentMethod || "Cash") === "Cash") {
-        sum += parseFloat(s.total) || 0;
+        sum += getOrderNetCashForBox(s);
       }
+    });
+    return sum;
+  }
+
+  function getAllTimeKeptChangeTotal() {
+    let sum = 0;
+    if (!Array.isArray(salesLog)) return 0;
+    salesLog.forEach(function(s) {
+      if (!s) return;
+      sum += getOrderKeptChangeAmount(s);
     });
     return sum;
   }
@@ -2292,9 +2412,13 @@
 
     physEl.textContent = "$" + currentBox.toFixed(2);
     if (subEl) {
-      let msg = "Starting Change/Float: $" + startCash.toFixed(2) + " + Cash Sales Since Reset: $" + cashAddedSinceReset.toFixed(2);
+      const totalKeptChange = getAllTimeKeptChangeTotal();
+      let msg = "Starting Change/Float: $" + startCash.toFixed(2) + " + Cash Collected Since Reset: $" + cashAddedSinceReset.toFixed(2);
+      if (totalKeptChange > 0) {
+        msg += " (Includes $" + totalKeptChange.toFixed(2) + " in refused/kept change)";
+      }
       if (cashBoxConfig.lastUpdated) {
-        msg += " (Last adjusted: " + cashBoxConfig.lastUpdated + ")";
+        msg += " • Last adjusted: " + cashBoxConfig.lastUpdated;
       }
       subEl.textContent = msg;
     }
@@ -2515,12 +2639,15 @@
     document.getElementById("buyerName").value = parsed.buyer === "Walk-up" ? "" : parsed.buyer;
     const cleanDir = cleanDirectorateValue(sale.directorate);
     document.getElementById("buyerDirectorate").value = cleanDir === "—" ? "" : cleanDir;
+    const existingKeptChange = getOrderKeptChangeAmount(sale);
+    keepChangeRefused = existingKeptChange > 0;
     selectPaymentMethod(sale.paymentMethod || "Cash");
     if ((sale.paymentMethod || "Cash") === "Cash" && sale.cashPaid) {
       document.getElementById("cashInput").value = parseFloat(sale.cashPaid).toFixed(2);
     } else {
       document.getElementById("cashInput").value = "";
     }
+    updateChange();
 
     closeLogsModal();
     updateEditingBannerUI();
@@ -2568,10 +2695,16 @@
     let cashPaid = total;
     let changeGiven = 0;
 
+    let keptChangeAmt = 0;
     if (currentPaymentMethod === "Cash") {
       const rawCash = parseFloat(document.getElementById("cashInput").value);
       cashPaid = (!isNaN(rawCash) && rawCash >= total) ? rawCash : total;
-      changeGiven = cashPaid - total;
+      if (keepChangeRefused && cashPaid > total) {
+        changeGiven = 0;
+        keptChangeAmt = cashPaid - total;
+      } else {
+        changeGiven = cashPaid - total;
+      }
     }
 
     const itemQuantities = {};
@@ -2602,6 +2735,9 @@
       }
     });
 
+    if (keptChangeAmt > 0.004) {
+      soldSummaryParts.push("[Kept Change: +$" + keptChangeAmt.toFixed(2) + "]");
+    }
     const uniqueSuffix = Date.now().toString().slice(-5) + "-" + Math.floor(100 + Math.random() * 900);
     const saleRecord = {
       orderId: "ORD-" + uniqueSuffix,
@@ -2614,6 +2750,7 @@
       total: total.toFixed(2),
       cashPaid: cashPaid.toFixed(2),
       change: changeGiven.toFixed(2),
+      keptChange: keptChangeAmt.toFixed(2),
       itemQuantities: itemQuantities,
       lineItems: lineItems,
       items: soldSummaryParts.join("; ")
@@ -2779,7 +2916,9 @@
   }
 
   function flushOfflineQueue(silent) {
+    pruneVoidedFromOfflineQueue();
     if (!cloudUrl || offlineQueue.length === 0) {
+      updateCloudBadge();
       if (!silent) alert("No pending offline sales to sync.");
       return;
     }
@@ -2920,6 +3059,10 @@
   function pullInventoryFromCloud(silent) {
     if (!cloudUrl) return;
     if (silent && isInventoryModalOpen()) return;
+    pruneVoidedFromOfflineQueue();
+    if (!silent && offlineQueue.length > 0) {
+      flushOfflineQueue(true);
+    }
 
     isSyncing = true;
     setSyncIndicator("Syncing Cloud...", "syncing");
@@ -3674,23 +3817,30 @@
 
     let totalAll = 0;
     let totalCash = 0;
+    let totalKeptChange = 0;
     let totalElec = 0;
     let totalUnits = 0;
 
     filteredSales.forEach(function(e) {
       if (!e) return;
       const amt = parseFloat(e.total) || 0;
+      const kept = getOrderKeptChangeAmount(e);
       totalAll += amt;
       totalUnits += parseInt(e.totalQty, 10) || 0;
-      if ((e.paymentMethod || "Cash") === "Cash") totalCash += amt;
-      else totalElec += amt;
+      if ((e.paymentMethod || "Cash") === "Cash") {
+        totalCash += amt;
+        totalKeptChange += kept;
+      } else {
+        totalElec += amt;
+      }
     });
 
     populateMonthDropdownOptions();
     const periodDesc = getActiveFilterPeriodDescription();
-    document.getElementById("sumTotalLabel").textContent = logDateFilter === "all" ? "All-Time Revenue" : (logDateFilter === "today" ? "Today's Revenue" : "Period Revenue");
-    document.getElementById("sumTotal").textContent = "$" + totalAll.toFixed(2);
-    document.getElementById("sumCash").textContent = "$" + totalCash.toFixed(2);
+    document.getElementById("sumTotalLabel").textContent = logDateFilter === "all" ? "All-Time Item Revenue" : (logDateFilter === "today" ? "Today's Item Revenue" : "Period Item Revenue");
+    document.getElementById("sumTotal").textContent = "$" + totalAll.toFixed(2) + (totalKeptChange > 0 ? " (+" + "$" + totalKeptChange.toFixed(2) + " kept)" : "");
+    document.getElementById("sumCashLabel").textContent = totalKeptChange > 0 ? "Cash Collected (Incl. Kept Change)" : "Cash Sales (Revenue)";
+    document.getElementById("sumCash").textContent = "$" + (totalCash + totalKeptChange).toFixed(2);
     document.getElementById("sumElec").textContent = "$" + totalElec.toFixed(2);
     document.getElementById("sumItemsCount").textContent = totalUnits.toString();
     document.getElementById("showingCountLabel").textContent = periodDesc + " • Showing " + filteredSales.length + " of " + salesLog.length + " total orders";
@@ -3811,7 +3961,9 @@
         "<td>" + breakdownHTML + "</td>" +
         '<td><span class="pm-badge ' + (isElec ? "electronic" : "") + '">' + (e.paymentMethod || "Cash") + "</span></td>" +
         '<td style="font-weight:800;">$' + (e.total || "0.00") + "</td>" +
-        "<td>$" + (e.cashPaid || "0.00") + " / $" + (e.change || "0.00") + "</td>" +
+        "<td>$" + (e.cashPaid || "0.00") + " / $" + (e.change || "0.00") +
+          (getOrderKeptChangeAmount(e) > 0 ? '<br><span class="kept-change-badge">+Kept $' + getOrderKeptChangeAmount(e).toFixed(2) + '</span>' : '') +
+        "</td>" +
         '<td style="white-space:nowrap;">' +
           '<button type="button" class="btn-edit-order" onclick="editSaleRecord(\'' + (e.orderId || "") + '\')" title="Edit buyer name, directorate, payment method, or items (e.g. 2+ patch deal)">Edit</button>' +
           '<button type="button" class="btn-void" onclick="voidSaleRecord(\'' + (e.orderId || "") + '\')" title="Void order and restore stock">Void</button>' +
@@ -3842,7 +3994,7 @@
     const periodLabel = getActiveFilterPeriodDescription();
     const fileSlug = getActiveFilterFilenameSlug();
 
-    let totalRev = 0, cashRev = 0, elecRev = 0, totalUnits = 0;
+    let totalRev = 0, cashRev = 0, keptChangeRev = 0, elecRev = 0, totalUnits = 0;
     const methodTotals = { "Cash": 0, "Card": 0, "PayPal": 0, "Venmo/Digital": 0 };
     const itemPerf = {};
     allItemNames.forEach(function(name) {
@@ -3864,8 +4016,12 @@
       const pm = s.paymentMethod || "Cash";
       totalRev += amt;
       totalUnits += units;
-      if (pm === "Cash") cashRev += amt;
-      else elecRev += amt;
+      if (pm === "Cash") {
+        cashRev += amt;
+        keptChangeRev += getOrderKeptChangeAmount(s);
+      } else {
+        elecRev += amt;
+      }
       methodTotals[pm] = (methodTotals[pm] || 0) + amt;
 
       const parsed = parseBuyerAndSeller(s);
@@ -3909,8 +4065,11 @@
     csv += "SECTION 1: EXECUTIVE REVENUE & CASH BOX SUMMARY (" + csvEscape(periodLabel) + ")\n";
     csv += "Metric,Value\n";
     csv += "Reporting Period," + csvEscape(periodLabel) + "\n";
-    csv += "Period Total Revenue,$" + totalRev.toFixed(2) + "\n";
-    csv += "Period Cash Sales (Logged Revenue),$" + cashRev.toFixed(2) + "\n";
+    csv += "Period Merchandise Sales Revenue,$" + totalRev.toFixed(2) + "\n";
+    csv += "Period Refused Change / Donations Kept,$" + keptChangeRev.toFixed(2) + "\n";
+    csv += "Period Total Collected (Merchandise + Kept Change),$" + (totalRev + keptChangeRev).toFixed(2) + "\n";
+    csv += "Period Cash Sales (Merchandise Only),$" + cashRev.toFixed(2) + "\n";
+    csv += "Period Total Cash Collected (Cash Sales + Kept Change),$" + (cashRev + keptChangeRev).toFixed(2) + "\n";
     csv += "Period Electronic Sales (All Digital),$" + elecRev.toFixed(2) + "\n";
     csv += "  - Card Sales,$" + (methodTotals["Card"] || 0).toFixed(2) + "\n";
     csv += "  - PayPal Sales,$" + (methodTotals["PayPal"] || 0).toFixed(2) + "\n";
@@ -3962,7 +4121,7 @@
     }
 
     csv += "SECTION 4: ORDER-BY-ORDER SALES MATRIX (" + csvEscape(periodLabel) + ")\n";
-    const headers = ["Order ID", "Date/Time", "Buyer Name", "Directorate", "Seller / Cashier", "Payment Method", "Total ($)", "Cash Paid ($)", "Change ($)", "Total Qty"]
+    const headers = ["Order ID", "Date/Time", "Buyer Name", "Directorate", "Seller / Cashier", "Payment Method", "Item Total ($)", "Cash Paid ($)", "Change Given ($)", "Kept Change ($)", "Total Qty"]
       .concat(allItemNames.map(function(n) { return csvEscape("Qty: " + n); }));
     csv += headers.join(",") + "\n";
 
@@ -3982,6 +4141,7 @@
         r.total || "0.00",
         r.cashPaid || "0.00",
         r.change || "0.00",
+        getOrderKeptChangeAmount(r).toFixed(2),
         r.totalQty || 0
       ];
       allItemNames.forEach(function(itemName) {
@@ -3992,7 +4152,7 @@
       csv += row.join(",") + "\n";
     });
 
-    const totalsRow = ["", "", "", "", "", "PERIOD TOTALS", totalRev.toFixed(2), "", "", totalUnits]
+    const totalsRow = ["", "", "", "", "", "PERIOD TOTALS", totalRev.toFixed(2), "", "", keptChangeRev.toFixed(2), totalUnits]
       .concat(allItemNames.map(function(n) { return colTotals[n]; }));
     csv += totalsRow.join(",") + "\n";
 
@@ -4041,7 +4201,7 @@
       return;
     }
 
-    csv = "Order ID,Date/Time,Buyer Name,Directorate,Seller,Total Qty,Items Breakdown,Payment Method,Total ($),Cash Paid ($),Change ($)\n";
+    csv = "Order ID,Date/Time,Buyer Name,Directorate,Seller,Total Qty,Items Breakdown,Payment Method,Item Total ($),Cash Paid ($),Change Given ($),Kept Change ($)\n";
     filteredSales.forEach(function(r) {
       if (!r) return;
       const parsed = parseBuyerAndSeller(r);
@@ -4056,7 +4216,8 @@
         csvEscape(r.paymentMethod || "Cash"),
         r.total || "0.00",
         r.cashPaid || "0.00",
-        r.change || "0.00"
+        r.change || "0.00",
+        getOrderKeptChangeAmount(r).toFixed(2)
       ].join(",") + "\n";
     });
     downloadFile("booster-sales-log-" + getActiveFilterFilenameSlug() + ".csv", csv, "text/csv");
