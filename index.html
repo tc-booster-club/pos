@@ -522,7 +522,126 @@
       font-size: 0.74rem;
       white-space: nowrap;
     }
-    .btn-void:hover { background: #ffe4e6; }
+        .btn-void:hover { background: #ffe4e6; }
+    .btn-edit-order {
+      background: #eff6ff;
+      color: var(--primary-light);
+      border: 1px solid #bfdbfe;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.74rem;
+      white-space: nowrap;
+      margin-right: 4px;
+    }
+    .btn-edit-order:hover { background: #dbeafe; }
+    .editing-order-banner {
+      display: none;
+      background: #fef3c7;
+      border: 2px solid #f59e0b;
+      color: #92400e;
+      padding: 8px 10px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .editing-order-banner button {
+      background: #dc2626;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 5px;
+      font-size: 0.74rem;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .cashbox-tracker-bar {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .cashbox-info-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .cashbox-stat {
+      display: flex;
+      flex-direction: column;
+    }
+    .cashbox-stat span {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #166534;
+      text-transform: uppercase;
+    }
+    .cashbox-stat strong {
+      font-size: 1.25rem;
+      color: #15803d;
+    }
+    .cashbox-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .filter-select, .filter-date-input {
+      padding: 5px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text);
+      background: white;
+      cursor: pointer;
+    }
+    .filter-select.active-select, .filter-date-input.active-date {
+      border-color: var(--primary);
+      background: #eff6ff;
+      color: var(--primary);
+    }
+    .date-range-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 2px 6px;
+    }
+    .date-range-group.active-range {
+      border-color: var(--primary);
+      background: #eff6ff;
+    }
+    .date-range-group label {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .date-range-group input[type="date"] {
+      border: none;
+      background: transparent;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--text);
+      padding: 3px 2px;
+      cursor: pointer;
+    }
 
     .seller-roster-box {
       background: #eff6ff;
@@ -925,11 +1044,15 @@
 
   <div class="cart-panel" id="cartPanel">
     <div class="cart-header">
-      <h2>Current Order</h2>
+      <h2 id="cartHeaderTitle">Current Order</h2>
       <div class="cart-header-btns">
         <button type="button" class="btn-clear" onclick="clearCart()">Clear All</button>
         <button type="button" class="btn-close-drawer" onclick="toggleMobileDrawer(false)">Done / Add More</button>
       </div>
+    </div>
+    <div class="editing-order-banner" id="editingOrderBanner">
+      <span id="editingOrderText">Editing Past Order</span>
+      <button type="button" onclick="cancelEditSaleOrder()">Cancel Edit</button>
     </div>
 
     <div class="cart-items" id="cartItems">
@@ -1103,10 +1226,19 @@
 
       <div class="filter-bar">
         <div class="filter-pills">
-          <span style="font-size:0.76rem; font-weight:800; color:var(--muted); text-transform:uppercase; margin-right:4px;">Date Filter:</span>
-          <button type="button" class="filter-pill active" id="filterBtnAll" onclick="setLogDateFilter('all')">All-Time Sales</button>
-          <button type="button" class="filter-pill" id="filterBtnToday" onclick="setLogDateFilter('today')">Today's Shift Only</button>
-          <input type="date" id="customDateFilter" style="padding:4px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.78rem; font-weight:700;" onchange="setLogDateFilter('custom')">
+          <span style="font-size:0.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; margin-right:2px;">Period:</span>
+          <button type="button" class="filter-pill active" id="filterBtnAll" onclick="setLogDateFilter('all')" title="Show all logged sales from the very beginning up to today">All-Time Sales</button>
+          <button type="button" class="filter-pill" id="filterBtnThisMonth" onclick="setThisMonthFilter()" title="Show only current calendar month sales">This Month</button>
+          <button type="button" class="filter-pill" id="filterBtnToday" onclick="setLogDateFilter('today')" title="Show only sales logged today">Today Only</button>
+          <select id="monthSelectFilter" class="filter-select" onchange="onMonthDropdownChange(this.value)" title="Filter by a specific month or All-Time">
+            <option value="all">Month: All-Time (Beginning to Now)</option>
+          </select>
+          <div class="date-range-group" id="dateRangeGroup" title="Select a Start Date and/or End Date to view sales during that time">
+            <label for="rangeStartDate">From:</label>
+            <input type="date" id="rangeStartDate" onchange="setLogDateFilter('range')">
+            <label for="rangeEndDate">To:</label>
+            <input type="date" id="rangeEndDate" onchange="setLogDateFilter('range')">
+          </div>
         </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
           <button type="button" class="btn-action green" onclick="exportMasterBoosterReportCSV()">&#128196; Download Master Treasurer Report (.CSV)</button>
@@ -1120,7 +1252,7 @@
           <strong id="sumTotal">$0.00</strong>
         </div>
         <div class="summary-pill">
-          <span>Cash Box Sales</span>
+          <span id="sumCashLabel">Cash Sales (Revenue)</span>
           <strong id="sumCash" style="color:var(--success);">$0.00</strong>
         </div>
         <div class="summary-pill">
@@ -1130,6 +1262,24 @@
         <div class="summary-pill">
           <span>Total Items Sold</span>
           <strong id="sumItemsCount">0</strong>
+        </div>
+      </div>
+
+      <div class="cashbox-tracker-bar">
+        <div class="cashbox-info-group">
+          <div class="cashbox-stat">
+            <span>&#128181; Physical Cash Currently in Box</span>
+            <strong id="physicalCashInBoxDisplay">$0.00</strong>
+          </div>
+          <div style="font-size:0.78rem; color:#166534; max-width:440px; line-height:1.35;" id="cashBoxDetailSubtext">
+            Tracks actual cash inside your box since last bank deposit/reset (Starting change + cash sales since reset).
+          </div>
+        </div>
+        <div class="cashbox-actions">
+          <button type="button" class="btn-action green" onclick="promptBankDropLeaveChange()" title="Take cash to bank and set exact change left in box">&#127974; Bank Deposit / Leave Change</button>
+          <button type="button" class="btn-action amber" onclick="zeroOutCashBox()" title="Empty cash box completely to $0.00">Zero Out ($0.00)</button>
+          <button type="button" class="btn-action slate" onclick="promptSetExactCashBox()" title="Manually set exact dollar amount currently in the cash box">Set Exact Cash</button>
+          <button type="button" class="btn-action" style="background:#0f766e;" onclick="viewCashBoxHistoryModal()" title="View log of past bank deposits and cash box adjustments">&#128220; Deposit History</button>
         </div>
       </div>
 
@@ -1292,10 +1442,14 @@
   const SETTINGS_ROW_NAME = "__BOOSTER_SETTINGS__";
   const LEGACY_CLOUD_URL = "https://script.google.com/macros/s/AKfycbzFd6y6SsmrIp0MotfAe6auIwW-ek3023ydixUCY6ezQoB3d43JSbOHYvk4K_ef8TFPBA/exec";
 
+  function isSettingsItemName(name) {
+    const n = String(name || "").trim();
+    return !n || n === SETTINGS_ROW_NAME || n.indexOf(SETTINGS_ROW_NAME) === 0 || n === "999999";
+  }
+
   function isSettingsRow(item) {
     if (!item) return false;
-    const n = String(item.name || "").trim();
-    return n === SETTINGS_ROW_NAME || n.indexOf(SETTINGS_ROW_NAME + ":") === 0 || String(item.id || "") === "999999";
+    return isSettingsItemName(item.name) || String(item.id || "") === "999999";
   }
 
   function sanitizeInventory(list) {
@@ -1350,6 +1504,14 @@
   if (!Array.isArray(salesLog)) salesLog = [];
   let voidedOrderIds = safeParseJSON("booster_voided_orders", []);
   if (!Array.isArray(voidedOrderIds)) voidedOrderIds = [];
+  let cashBoxConfig = safeParseJSON("booster_cashbox_config", { startingCash: 0, baselineSalesCash: 0, lastUpdated: "", history: [] });
+  if (!cashBoxConfig || typeof cashBoxConfig !== "object") {
+    cashBoxConfig = { startingCash: 0, baselineSalesCash: 0, lastUpdated: "", history: [] };
+  }
+  if (!Array.isArray(cashBoxConfig.history)) {
+    cashBoxConfig.history = [];
+  }
+  let editingSaleBackup = null;
   let offlineQueue = safeParseJSON("booster_offline_queue", []);
   if (!Array.isArray(offlineQueue)) offlineQueue = [];
 
@@ -1693,6 +1855,7 @@
     safeSetStorage("booster_sales_today", totalSalesToday.toString());
     safeSetStorage("booster_sales_log", JSON.stringify(salesLog));
     safeSetStorage("booster_voided_orders", JSON.stringify(voidedOrderIds));
+    safeSetStorage("booster_cashbox_config", JSON.stringify(cashBoxConfig));
     safeSetStorage("booster_offline_queue", JSON.stringify(offlineQueue));
     if (cloudUrl) safeSetStorage("booster_cloud_url", cloudUrl);
     safeSetStorage("booster_has_cloud_stock", hasPulledCloudStock ? "true" : "false");
@@ -1995,7 +2158,9 @@
     if (entries.length === 0) {
       container.innerHTML = '<p style="color: var(--muted); text-align: center; margin-top: 24px;">Tap items to add to order</p>';
       document.getElementById("totalDue").textContent = "$0.00";
-      document.getElementById("completeBtn").disabled = true;
+      const compBtn = document.getElementById("completeBtn");
+      compBtn.disabled = true;
+      compBtn.textContent = editingSaleBackup ? "Save Updated Order & Sync" : "Complete Sale & Log";
       updateChange();
       return;
     }
@@ -2034,7 +2199,9 @@
     });
 
     document.getElementById("totalDue").textContent = "$" + total.toFixed(2);
-    document.getElementById("completeBtn").disabled = false;
+    const compBtn = document.getElementById("completeBtn");
+    compBtn.disabled = false;
+    compBtn.textContent = editingSaleBackup ? "Save Updated Order & Sync" : "Complete Sale & Log";
     updateChange();
   }
 
@@ -2076,12 +2243,321 @@
     }
   }
 
+  function getAllTimeCashSalesTotal() {
+    let sum = 0;
+    if (!Array.isArray(salesLog)) return 0;
+    salesLog.forEach(function(s) {
+      if (!s) return;
+      if ((s.paymentMethod || "Cash") === "Cash") {
+        sum += parseFloat(s.total) || 0;
+      }
+    });
+    return sum;
+  }
+
+  function getPhysicalCashInBox() {
+    const allCashSales = getAllTimeCashSalesTotal();
+    const startCash = parseFloat(cashBoxConfig.startingCash) || 0;
+    const baseSales = parseFloat(cashBoxConfig.baselineSalesCash) || 0;
+    return Math.max(0, startCash + (allCashSales - baseSales));
+  }
+
+  function recordCashBoxAdjustment(actionType, previousBox, takenToBank, leftInBox, note) {
+    if (!Array.isArray(cashBoxConfig.history)) {
+      cashBoxConfig.history = [];
+    }
+    cashBoxConfig.history.unshift({
+      timestamp: new Date().toLocaleString(),
+      bySeller: activeSeller || "Booster Member",
+      action: actionType,
+      previousCash: Number(previousBox || 0).toFixed(2),
+      takenToBank: Number(takenToBank || 0).toFixed(2),
+      leftInBox: Number(leftInBox || 0).toFixed(2),
+      note: note || ""
+    });
+    if (cashBoxConfig.history.length > 25) {
+      cashBoxConfig.history = cashBoxConfig.history.slice(0, 25);
+    }
+  }
+
+  function updateCashBoxUI() {
+    const physEl = document.getElementById("physicalCashInBoxDisplay");
+    const subEl = document.getElementById("cashBoxDetailSubtext");
+    if (!physEl) return;
+    const currentBox = getPhysicalCashInBox();
+    const allCashSales = getAllTimeCashSalesTotal();
+    const startCash = parseFloat(cashBoxConfig.startingCash) || 0;
+    const baseSales = parseFloat(cashBoxConfig.baselineSalesCash) || 0;
+    const cashAddedSinceReset = Math.max(0, allCashSales - baseSales);
+
+    physEl.textContent = "$" + currentBox.toFixed(2);
+    if (subEl) {
+      let msg = "Starting Change/Float: $" + startCash.toFixed(2) + " + Cash Sales Since Reset: $" + cashAddedSinceReset.toFixed(2);
+      if (cashBoxConfig.lastUpdated) {
+        msg += " (Last adjusted: " + cashBoxConfig.lastUpdated + ")";
+      }
+      subEl.textContent = msg;
+    }
+  }
+
+  function zeroOutCashBox() {
+    const currentBox = getPhysicalCashInBox();
+    if (!confirm("ZERO OUT CASH BOX?\n\nCurrent Physical Cash in Box: $" + currentBox.toFixed(2) + "\n\nClicking OK will reset the physical cash box counter to $0.00 (for example, after taking all cash to the bank). Your historical sales logs and revenue reports will NOT be deleted.")) {
+      return;
+    }
+    const prevHistory = Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history : [];
+    cashBoxConfig = {
+      startingCash: 0,
+      baselineSalesCash: getAllTimeCashSalesTotal(),
+      lastUpdated: new Date().toLocaleString(),
+      history: prevHistory
+    };
+    recordCashBoxAdjustment("Zero Out Cash Box", currentBox, currentBox, 0, "Emptied box to $0.00");
+    inventoryDirty = true;
+    saveState();
+    updateCashBoxUI();
+    scheduleAutoPushInventory();
+  }
+
+  function promptBankDropLeaveChange() {
+    const currentBox = getPhysicalCashInBox();
+    const raw = prompt(
+      "BANK DEPOSIT / LEAVE CHANGE IN BOX\n\n" +
+      "Current Physical Cash in Box: $" + currentBox.toFixed(2) + "\n\n" +
+      "How much cash/change are you LEAVING inside the box for future change? (Enter 0 if taking everything to the bank):",
+      "0.00"
+    );
+    if (raw === null) return;
+    const leftInBox = parseFloat(raw);
+    if (isNaN(leftInBox) || leftInBox < 0) {
+      alert("Please enter a valid dollar amount (0 or greater).");
+      return;
+    }
+    const takenToBank = Math.max(0, currentBox - leftInBox);
+    const prevHistory = Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history : [];
+    cashBoxConfig = {
+      startingCash: leftInBox,
+      baselineSalesCash: getAllTimeCashSalesTotal(),
+      lastUpdated: new Date().toLocaleString(),
+      history: prevHistory
+    };
+    recordCashBoxAdjustment("Bank Deposit", currentBox, takenToBank, leftInBox, "Deposited $" + takenToBank.toFixed(2) + ", left $" + leftInBox.toFixed(2) + " change");
+    inventoryDirty = true;
+    saveState();
+    updateCashBoxUI();
+    scheduleAutoPushInventory();
+    alert("Cash Box Updated!\n\n• Taken to Bank: $" + takenToBank.toFixed(2) + "\n• Change Left in Box: $" + leftInBox.toFixed(2));
+  }
+
+  function promptSetExactCashBox() {
+    const currentBox = getPhysicalCashInBox();
+    const raw = prompt(
+      "SET EXACT CASH IN BOX\n\n" +
+      "Enter the exact total dollar amount physically inside the cash box right now (e.g., if you just counted the box or added starting change):",
+      currentBox.toFixed(2)
+    );
+    if (raw === null) return;
+    const exactVal = parseFloat(raw);
+    if (isNaN(exactVal) || exactVal < 0) {
+      alert("Please enter a valid dollar amount (0 or greater).");
+      return;
+    }
+    const prevHistory = Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history : [];
+    cashBoxConfig = {
+      startingCash: exactVal,
+      baselineSalesCash: getAllTimeCashSalesTotal(),
+      lastUpdated: new Date().toLocaleString(),
+      history: prevHistory
+    };
+    recordCashBoxAdjustment("Set Exact Cash", currentBox, Math.max(0, currentBox - exactVal), exactVal, "Manually set cash box to $" + exactVal.toFixed(2));
+    inventoryDirty = true;
+    saveState();
+    updateCashBoxUI();
+    scheduleAutoPushInventory();
+  }
+
+  function viewCashBoxHistoryModal() {
+    const hist = Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history : [];
+    if (hist.length === 0) {
+      alert("No bank deposits or cash box adjustments have been logged yet.");
+      return;
+    }
+    const lines = hist.slice(0, 12).map(function(h, i) {
+      return (i + 1) + ". [" + (h.timestamp || "") + "] " + (h.action || "Adjustment") +
+        " by " + (h.bySeller || "Member") +
+        " — Taken to Bank: $" + (h.takenToBank || "0.00") +
+        " | Left in Box: $" + (h.leftInBox || "0.00");
+    });
+    alert("RECENT CASH BOX & BANK DEPOSIT LOG (Also included in Master Treasurer CSV):\n\n" + lines.join("\n"));
+  }
+
+  function restoreSaleStockToInventory(sale) {
+    if (!sale) return;
+    if (Array.isArray(sale.lineItems) && sale.lineItems.length > 0) {
+      sale.lineItems.forEach(function(li) {
+        const match = inventory.find(function(invItem) {
+          return String(invItem.name).trim().toLowerCase() === String(li.itemName || "").trim().toLowerCase();
+        });
+        if (match) {
+          match.stock = (parseInt(match.stock, 10) || 0) + (parseInt(li.qty, 10) || 0);
+        }
+      });
+    } else if (sale.itemQuantities) {
+      Object.keys(sale.itemQuantities).forEach(function(k) {
+        const q = parseInt(sale.itemQuantities[k], 10) || 0;
+        if (q > 0) {
+          const match = inventory.find(function(invItem) {
+            return String(invItem.name).trim().toLowerCase() === String(k).trim().toLowerCase();
+          });
+          if (match) {
+            match.stock = (parseInt(match.stock, 10) || 0) + q;
+          }
+        }
+      });
+    }
+  }
+
+  function deductSaleStockFromInventory(sale) {
+    if (!sale) return;
+    if (Array.isArray(sale.lineItems) && sale.lineItems.length > 0) {
+      sale.lineItems.forEach(function(li) {
+        const match = inventory.find(function(invItem) {
+          return String(invItem.name).trim().toLowerCase() === String(li.itemName || "").trim().toLowerCase();
+        });
+        if (match) {
+          match.stock = Math.max(0, (parseInt(match.stock, 10) || 0) - (parseInt(li.qty, 10) || 0));
+        }
+      });
+    } else if (sale.itemQuantities) {
+      Object.keys(sale.itemQuantities).forEach(function(k) {
+        const q = parseInt(sale.itemQuantities[k], 10) || 0;
+        if (q > 0) {
+          const match = inventory.find(function(invItem) {
+            return String(invItem.name).trim().toLowerCase() === String(k).trim().toLowerCase();
+          });
+          if (match) {
+            match.stock = Math.max(0, (parseInt(match.stock, 10) || 0) - q);
+          }
+        }
+      });
+    }
+  }
+
+  function updateEditingBannerUI() {
+    const banner = document.getElementById("editingOrderBanner");
+    const titleEl = document.getElementById("cartHeaderTitle");
+    const textEl = document.getElementById("editingOrderText");
+    if (!banner) return;
+    if (editingSaleBackup && editingSaleBackup.sale) {
+      const parsed = parseBuyerAndSeller(editingSaleBackup.sale);
+      banner.style.display = "flex";
+      if (titleEl) titleEl.textContent = "Editing Past Order";
+      if (textEl) {
+        textEl.innerHTML = "&#9998; Editing <strong>" + parsed.buyer + "</strong> ($" + (editingSaleBackup.sale.total || "0.00") + ") &bull; Add/change items (2+ patch deal auto-applies!) or buyer info.";
+      }
+    } else {
+      banner.style.display = "none";
+      if (titleEl) titleEl.textContent = "Current Order";
+    }
+  }
+
+  function editSaleRecord(orderId) {
+    if (editingSaleBackup) {
+      alert("You are already editing an order in the register. Please complete or cancel that edit first.");
+      return;
+    }
+    const idx = salesLog.findIndex(function(s) { return s && String(s.orderId) === String(orderId); });
+    if (idx === -1) return;
+    const sale = salesLog[idx];
+    const parsed = parseBuyerAndSeller(sale);
+
+    if (Object.keys(cart).length > 0) {
+      if (!confirm("Your current register cart has items in it. Replace the cart with this past order to edit it?")) {
+        return;
+      }
+    }
+
+    editingSaleBackup = {
+      sale: JSON.parse(JSON.stringify(sale)),
+      index: idx
+    };
+
+    // Temporarily put the original order's items back into stock and load them into the cart
+    restoreSaleStockToInventory(sale);
+    cart = {};
+
+    if (Array.isArray(sale.lineItems) && sale.lineItems.length > 0) {
+      sale.lineItems.forEach(function(li) {
+        const match = inventory.find(function(invItem) {
+          return String(invItem.name).trim().toLowerCase() === String(li.itemName || "").trim().toLowerCase();
+        });
+        if (match && (parseInt(li.qty, 10) || 0) > 0) {
+          cart[match.id] = (cart[match.id] || 0) + (parseInt(li.qty, 10) || 0);
+        }
+      });
+    } else if (sale.itemQuantities) {
+      Object.keys(sale.itemQuantities).forEach(function(k) {
+        const q = parseInt(sale.itemQuantities[k], 10) || 0;
+        if (q > 0) {
+          const match = inventory.find(function(invItem) {
+            return String(invItem.name).trim().toLowerCase() === String(k).trim().toLowerCase();
+          });
+          if (match) {
+            cart[match.id] = (cart[match.id] || 0) + q;
+          }
+        }
+      });
+    }
+
+    // Remove the old order from salesLog while editing
+    salesLog.splice(idx, 1);
+
+    document.getElementById("buyerName").value = parsed.buyer === "Walk-up" ? "" : parsed.buyer;
+    const cleanDir = cleanDirectorateValue(sale.directorate);
+    document.getElementById("buyerDirectorate").value = cleanDir === "—" ? "" : cleanDir;
+    selectPaymentMethod(sale.paymentMethod || "Cash");
+    if ((sale.paymentMethod || "Cash") === "Cash" && sale.cashPaid) {
+      document.getElementById("cashInput").value = parseFloat(sale.cashPaid).toFixed(2);
+    } else {
+      document.getElementById("cashInput").value = "";
+    }
+
+    closeLogsModal();
+    updateEditingBannerUI();
+    saveState();
+    renderGrid();
+    renderCart();
+    toggleMobileDrawer(true);
+  }
+
+  function cancelEditSaleOrder() {
+    if (!editingSaleBackup || !editingSaleBackup.sale) return;
+    const origSale = editingSaleBackup.sale;
+    const origIdx = editingSaleBackup.index;
+
+    deductSaleStockFromInventory(origSale);
+    if (origIdx >= 0 && origIdx <= salesLog.length) {
+      salesLog.splice(origIdx, 0, origSale);
+    } else {
+      salesLog.unshift(origSale);
+    }
+
+    editingSaleBackup = null;
+    updateEditingBannerUI();
+    clearCart();
+    saveState();
+    renderGrid();
+    renderCart();
+  }
+
   function completeSale() {
     const total = getCartTotal();
     if (total <= 0) return;
 
+    const wasEditing = editingSaleBackup && editingSaleBackup.sale ? editingSaleBackup.sale : null;
+
     const rawBuyer = document.getElementById("buyerName").value.trim() || "Walk-up";
-    const seller = activeSeller || "Booster Member";
+    const seller = activeSeller || (wasEditing && wasEditing.sellerName ? wasEditing.sellerName : "Booster Member");
     const combinedBuyerName = rawBuyer.indexOf("[Sold by:") !== -1
       ? rawBuyer
       : (rawBuyer + " [Sold by: " + seller + "]");
@@ -2129,7 +2605,7 @@
     const uniqueSuffix = Date.now().toString().slice(-5) + "-" + Math.floor(100 + Math.random() * 900);
     const saleRecord = {
       orderId: "ORD-" + uniqueSuffix,
-      timestamp: new Date().toLocaleString(),
+      timestamp: wasEditing ? (wasEditing.timestamp || new Date().toLocaleString()) : new Date().toLocaleString(),
       buyerName: combinedBuyerName,
       sellerName: seller,
       directorate: directorate,
@@ -2143,8 +2619,25 @@
       items: soldSummaryParts.join("; ")
     };
 
-    salesLog.unshift(saleRecord);
+    if (wasEditing && wasEditing.orderId) {
+      if (voidedOrderIds.indexOf(String(wasEditing.orderId)) === -1) {
+        voidedOrderIds.push(String(wasEditing.orderId));
+      }
+      const insertIdx = editingSaleBackup.index;
+      if (insertIdx >= 0 && insertIdx <= salesLog.length) {
+        salesLog.splice(insertIdx, 0, saleRecord);
+      } else {
+        salesLog.unshift(saleRecord);
+      }
+      editingSaleBackup = null;
+      inventoryDirty = true;
+      updateEditingBannerUI();
+    } else {
+      salesLog.unshift(saleRecord);
+    }
+
     saveState();
+    updateCashBoxUI();
 
     sendSaleToCloud(saleRecord);
     clearCart();
@@ -2223,7 +2716,8 @@
       sellers: sellersRoster,
       pin: appPin,
       baseStocks: baseStockMap,
-      voidedOrders: voidedOrderIds
+      voidedOrders: voidedOrderIds,
+      cashBox: cashBoxConfig
     };
     const settingsJson = JSON.stringify(settingsObj);
 
@@ -2391,6 +2885,11 @@
       .filter(function(s) { return s && !voidSet.has(String(s.orderId || "")); })
       .map(function(s) {
         s.directorate = cleanDirectorateValue(s.directorate);
+        if (s.itemQuantities && typeof s.itemQuantities === "object") {
+          Object.keys(s.itemQuantities).forEach(function(k) {
+            if (isSettingsItemName(k)) delete s.itemQuantities[k];
+          });
+        }
         return s;
       });
     const cloudOrderIds = new Set(filteredCloud.map(function(s) { return String(s.orderId || ""); }));
@@ -2502,6 +3001,15 @@
                   if (data && Array.isArray(data.sales)) {
                     mergeCloudSalesWithLocal(data.sales);
                   }
+                }
+                if (parsedSettings.cashBox && typeof parsedSettings.cashBox === "object") {
+                  cashBoxConfig = {
+                    startingCash: parseFloat(parsedSettings.cashBox.startingCash) || 0,
+                    baselineSalesCash: parseFloat(parsedSettings.cashBox.baselineSalesCash) || 0,
+                    lastUpdated: parsedSettings.cashBox.lastUpdated || "",
+                    history: Array.isArray(parsedSettings.cashBox.history) ? parsedSettings.cashBox.history : (cashBoxConfig.history || [])
+                  };
+                  safeSetStorage("booster_cashbox_config", JSON.stringify(cashBoxConfig));
                 }
               } catch (settingsErr) {}
             }
@@ -2836,14 +3344,151 @@
     pushInventoryToCloud(true);
   }
 
+  function parseSaleTimestampToDate(timestampStr) {
+    if (!timestampStr) return null;
+    const raw = String(timestampStr).trim();
+    const d = new Date(raw);
+    if (!isNaN(d.getTime())) return d;
+    const m = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if (m) {
+      let yr = parseInt(m[3], 10);
+      if (yr < 100) yr += 2000;
+      return new Date(yr, parseInt(m[1], 10) - 1, parseInt(m[2], 10));
+    }
+    return null;
+  }
+
+  function getYearMonthKeyFromDate(d) {
+    if (!d || isNaN(d.getTime())) return "";
+    const y = d.getFullYear();
+    const m = d.getMonth() + 1;
+    return y + "-" + (m < 10 ? "0" + m : String(m));
+  }
+
+  function formatYearMonthLabel(ymKey) {
+    if (!ymKey || ymKey === "all") return "All-Time (Beginning to Current Date)";
+    const parts = String(ymKey).split("-");
+    if (parts.length < 2) return ymKey;
+    const yr = parseInt(parts[0], 10);
+    const mo = parseInt(parts[1], 10) - 1;
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    return (monthNames[mo] || parts[1]) + " " + yr;
+  }
+
+  function populateMonthDropdownOptions() {
+    const sel = document.getElementById("monthSelectFilter");
+    if (!sel) return;
+    const currentSelection = sel.value || "all";
+    const ymSet = new Set();
+    const now = new Date();
+    ymSet.add(getYearMonthKeyFromDate(now));
+
+    if (Array.isArray(salesLog)) {
+      salesLog.forEach(function(s) {
+        if (!s || !s.timestamp) return;
+        const d = parseSaleTimestampToDate(s.timestamp);
+        if (d) {
+          const ym = getYearMonthKeyFromDate(d);
+          if (ym) ymSet.add(ym);
+        }
+      });
+    }
+
+    const sortedMonths = Array.from(ymSet).sort().reverse();
+    let html = '<option value="all">Month: All-Time (Beginning to Now)</option>';
+    sortedMonths.forEach(function(ym) {
+      html += '<option value="' + ym + '">' + formatYearMonthLabel(ym) + ' Only</option>';
+    });
+    sel.innerHTML = html;
+
+    if (logDateFilter === "month" && sortedMonths.indexOf(currentSelection) !== -1) {
+      sel.value = currentSelection;
+    } else if (logDateFilter !== "month") {
+      sel.value = "all";
+    }
+  }
+
+  function setThisMonthFilter() {
+    populateMonthDropdownOptions();
+    const thisYm = getYearMonthKeyFromDate(new Date());
+    const sel = document.getElementById("monthSelectFilter");
+    if (sel) sel.value = thisYm;
+    setLogDateFilter("month");
+  }
+
+  function onMonthDropdownChange(val) {
+    if (!val || val === "all") {
+      setLogDateFilter("all");
+    } else {
+      setLogDateFilter("month");
+    }
+  }
+
   function setLogDateFilter(mode) {
     logDateFilter = mode;
-    document.getElementById("filterBtnAll").classList.toggle("active", mode === "all");
-    document.getElementById("filterBtnToday").classList.toggle("active", mode === "today");
-    if (mode !== "custom") {
-      document.getElementById("customDateFilter").value = "";
+    const btnAll = document.getElementById("filterBtnAll");
+    const btnThisMonth = document.getElementById("filterBtnThisMonth");
+    const btnToday = document.getElementById("filterBtnToday");
+    const monthSel = document.getElementById("monthSelectFilter");
+    const rangeGroup = document.getElementById("dateRangeGroup");
+    const startInput = document.getElementById("rangeStartDate");
+    const endInput = document.getElementById("rangeEndDate");
+
+    const nowYm = getYearMonthKeyFromDate(new Date());
+    const isThisMonthSelected = (mode === "month" && monthSel && monthSel.value === nowYm);
+
+    if (btnAll) btnAll.classList.toggle("active", mode === "all");
+    if (btnThisMonth) btnThisMonth.classList.toggle("active", isThisMonthSelected);
+    if (btnToday) btnToday.classList.toggle("active", mode === "today");
+    if (monthSel) {
+      if (mode !== "month") monthSel.value = "all";
+      monthSel.classList.toggle("active-select", mode === "month");
+    }
+    if (rangeGroup) {
+      rangeGroup.classList.toggle("active-range", mode === "range");
+    }
+    if (mode !== "range") {
+      if (startInput) startInput.value = "";
+      if (endInput) endInput.value = "";
     }
     renderSalesLogTable();
+  }
+
+  function getActiveFilterPeriodDescription() {
+    const todayStr = new Date().toLocaleDateString();
+    if (logDateFilter === "today") {
+      return "Today Only (" + todayStr + ")";
+    }
+    if (logDateFilter === "month") {
+      const sel = document.getElementById("monthSelectFilter");
+      const ym = sel ? sel.value : "";
+      if (ym && ym !== "all") {
+        return formatYearMonthLabel(ym) + " Monthly Report";
+      }
+    }
+    if (logDateFilter === "range") {
+      const sVal = (document.getElementById("rangeStartDate") || {}).value || "";
+      const eVal = (document.getElementById("rangeEndDate") || {}).value || "";
+      if (sVal && eVal) return "Date Range: " + sVal + " to " + eVal;
+      if (sVal) return "From " + sVal + " to " + todayStr;
+      if (eVal) return "Up through " + eVal;
+    }
+    return "All-Time (From Beginning through " + todayStr + ")";
+  }
+
+  function getActiveFilterFilenameSlug() {
+    const isoToday = new Date().toISOString().slice(0, 10);
+    if (logDateFilter === "today") return "today-" + isoToday;
+    if (logDateFilter === "month") {
+      const sel = document.getElementById("monthSelectFilter");
+      if (sel && sel.value && sel.value !== "all") return "month-" + sel.value;
+    }
+    if (logDateFilter === "range") {
+      const sVal = (document.getElementById("rangeStartDate") || {}).value || "start";
+      const eVal = (document.getElementById("rangeEndDate") || {}).value || isoToday;
+      return sVal + "_to_" + eVal;
+    }
+    return "all-time-thru-" + isoToday;
   }
 
   function getFilteredSalesLog() {
@@ -2851,12 +3496,40 @@
       const today = new Date();
       return salesLog.filter(function(s) { return s && isSameLocalDate(s.timestamp, today); });
     }
-    if (logDateFilter === "custom") {
-      const val = document.getElementById("customDateFilter").value;
-      if (!val) return salesLog;
-      const parts = val.split("-");
-      const target = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-      return salesLog.filter(function(s) { return s && isSameLocalDate(s.timestamp, target); });
+    if (logDateFilter === "month") {
+      const sel = document.getElementById("monthSelectFilter");
+      const targetYm = sel ? sel.value : "all";
+      if (!targetYm || targetYm === "all") return salesLog;
+      return salesLog.filter(function(s) {
+        if (!s || !s.timestamp) return false;
+        const d = parseSaleTimestampToDate(s.timestamp);
+        return d && getYearMonthKeyFromDate(d) === targetYm;
+      });
+    }
+    if (logDateFilter === "range") {
+      const sVal = (document.getElementById("rangeStartDate") || {}).value || "";
+      const eVal = (document.getElementById("rangeEndDate") || {}).value || "";
+      if (!sVal && !eVal) return salesLog;
+
+      let startMs = null;
+      let endMs = null;
+      if (sVal) {
+        const sp = sVal.split("-");
+        startMs = new Date(parseInt(sp[0], 10), parseInt(sp[1], 10) - 1, parseInt(sp[2], 10), 0, 0, 0, 0).getTime();
+      }
+      if (eVal) {
+        const ep = eVal.split("-");
+        endMs = new Date(parseInt(ep[0], 10), parseInt(ep[1], 10) - 1, parseInt(ep[2], 10), 23, 59, 59, 999).getTime();
+      }
+      return salesLog.filter(function(s) {
+        if (!s || !s.timestamp) return false;
+        const d = parseSaleTimestampToDate(s.timestamp);
+        if (!d) return false;
+        const t = d.getTime();
+        if (startMs !== null && t < startMs) return false;
+        if (endMs !== null && t > endMs) return false;
+        return true;
+      });
     }
     return salesLog;
   }
@@ -2885,11 +3558,15 @@
   }
 
   function getAllMatrixItemNames() {
-    const allItemNames = inventory.map(function(i) { return i.name; });
+    const allItemNames = inventory
+      .filter(function(i) { return i && !isSettingsRow(i); })
+      .map(function(i) { return i.name; });
     salesLog.forEach(function(sale) {
       if (sale && sale.itemQuantities) {
         Object.keys(sale.itemQuantities).forEach(function(k) {
-          if (allItemNames.indexOf(k) === -1) allItemNames.push(k);
+          if (!isSettingsItemName(k) && allItemNames.indexOf(k) === -1) {
+            allItemNames.push(k);
+          }
         });
       }
     });
@@ -2927,12 +3604,14 @@
       if (Array.isArray(sale.lineItems) && sale.lineItems.length > 0) {
         sale.lineItems.forEach(function(li) {
           const k = li.itemName;
+          if (isSettingsItemName(k)) return;
           if (!itemStats[k]) itemStats[k] = { qty: 0, rev: 0, stock: "—" };
           itemStats[k].qty += parseInt(li.qty, 10) || 0;
           itemStats[k].rev += parseFloat(li.lineSubtotal) || 0;
         });
       } else if (sale.itemQuantities) {
         Object.keys(sale.itemQuantities).forEach(function(k) {
+          if (isSettingsItemName(k)) return;
           const q = parseInt(sale.itemQuantities[k], 10) || 0;
           if (q > 0) {
             if (!itemStats[k]) itemStats[k] = { qty: 0, rev: 0, stock: "—" };
@@ -3007,12 +3686,15 @@
       else totalElec += amt;
     });
 
-    document.getElementById("sumTotalLabel").textContent = logDateFilter === "today" ? "Today's Revenue" : (logDateFilter === "custom" ? "Selected Date Revenue" : "Total Logged Revenue");
+    populateMonthDropdownOptions();
+    const periodDesc = getActiveFilterPeriodDescription();
+    document.getElementById("sumTotalLabel").textContent = logDateFilter === "all" ? "All-Time Revenue" : (logDateFilter === "today" ? "Today's Revenue" : "Period Revenue");
     document.getElementById("sumTotal").textContent = "$" + totalAll.toFixed(2);
     document.getElementById("sumCash").textContent = "$" + totalCash.toFixed(2);
     document.getElementById("sumElec").textContent = "$" + totalElec.toFixed(2);
     document.getElementById("sumItemsCount").textContent = totalUnits.toString();
-    document.getElementById("showingCountLabel").textContent = "Showing " + filteredSales.length + " of " + salesLog.length + " total orders";
+    document.getElementById("showingCountLabel").textContent = periodDesc + " • Showing " + filteredSales.length + " of " + salesLog.length + " total orders";
+    updateCashBoxUI();
 
     if (logViewMode === "breakdown") {
       tableWrapper.style.display = "none";
@@ -3130,7 +3812,10 @@
         '<td><span class="pm-badge ' + (isElec ? "electronic" : "") + '">' + (e.paymentMethod || "Cash") + "</span></td>" +
         '<td style="font-weight:800;">$' + (e.total || "0.00") + "</td>" +
         "<td>$" + (e.cashPaid || "0.00") + " / $" + (e.change || "0.00") + "</td>" +
-        '<td><button type="button" class="btn-void" onclick="voidSaleRecord(\'' + (e.orderId || "") + '\')" title="Void order and restore stock">Void</button></td>';
+        '<td style="white-space:nowrap;">' +
+          '<button type="button" class="btn-edit-order" onclick="editSaleRecord(\'' + (e.orderId || "") + '\')" title="Edit buyer name, directorate, payment method, or items (e.g. 2+ patch deal)">Edit</button>' +
+          '<button type="button" class="btn-void" onclick="voidSaleRecord(\'' + (e.orderId || "") + '\')" title="Void order and restore stock">Void</button>' +
+        '</td>';
       tbody.appendChild(tr);
     });
   }
@@ -3154,41 +3839,129 @@
   function exportMasterBoosterReportCSV() {
     const filteredSales = getFilteredSalesLog();
     const allItemNames = getAllMatrixItemNames();
+    const periodLabel = getActiveFilterPeriodDescription();
+    const fileSlug = getActiveFilterFilenameSlug();
+
     let totalRev = 0, cashRev = 0, elecRev = 0, totalUnits = 0;
+    const methodTotals = { "Cash": 0, "Card": 0, "PayPal": 0, "Venmo/Digital": 0 };
+    const itemPerf = {};
+    allItemNames.forEach(function(name) {
+      const invMatch = inventory.find(function(i) { return i.name === name; });
+      itemPerf[name] = {
+        qty: 0,
+        rev: 0,
+        stdPrice: invMatch ? (Number(invMatch.price) || 0) : 0,
+        stock: invMatch ? (parseInt(invMatch.stock, 10) || 0) : "—"
+      };
+    });
+    const sellerStats = {};
+    const dirStats = {};
 
     filteredSales.forEach(function(s) {
       if (!s) return;
       const amt = parseFloat(s.total) || 0;
+      const units = parseInt(s.totalQty, 10) || 0;
+      const pm = s.paymentMethod || "Cash";
       totalRev += amt;
-      totalUnits += parseInt(s.totalQty, 10) || 0;
-      if ((s.paymentMethod || "Cash") === "Cash") cashRev += amt;
+      totalUnits += units;
+      if (pm === "Cash") cashRev += amt;
       else elecRev += amt;
+      methodTotals[pm] = (methodTotals[pm] || 0) + amt;
+
+      const parsed = parseBuyerAndSeller(s);
+      const sellerKey = parsed.seller !== "—" ? parsed.seller : "Unassigned / Prior Sales";
+      const dirKey = cleanDirectorateValue(s.directorate);
+
+      if (!sellerStats[sellerKey]) sellerStats[sellerKey] = { orders: 0, units: 0, rev: 0 };
+      sellerStats[sellerKey].orders += 1;
+      sellerStats[sellerKey].units += units;
+      sellerStats[sellerKey].rev += amt;
+
+      if (!dirStats[dirKey]) dirStats[dirKey] = { orders: 0, units: 0, rev: 0 };
+      dirStats[dirKey].orders += 1;
+      dirStats[dirKey].units += units;
+      dirStats[dirKey].rev += amt;
+
+      if (Array.isArray(s.lineItems) && s.lineItems.length > 0) {
+        s.lineItems.forEach(function(li) {
+          const k = li.itemName;
+          if (isSettingsItemName(k)) return;
+          if (!itemPerf[k]) itemPerf[k] = { qty: 0, rev: 0, stdPrice: 0, stock: "—" };
+          itemPerf[k].qty += parseInt(li.qty, 10) || 0;
+          itemPerf[k].rev += parseFloat(li.lineSubtotal) || 0;
+        });
+      } else if (s.itemQuantities) {
+        Object.keys(s.itemQuantities).forEach(function(k) {
+          if (isSettingsItemName(k)) return;
+          const q = parseInt(s.itemQuantities[k], 10) || 0;
+          if (q > 0) {
+            if (!itemPerf[k]) itemPerf[k] = { qty: 0, rev: 0, stdPrice: 0, stock: "—" };
+            itemPerf[k].qty += q;
+            itemPerf[k].rev += q * (itemPerf[k].stdPrice || 0);
+          }
+        });
+      }
     });
 
     let csv = "BOOSTER CLUB POS - MASTER TREASURER & INVENTORY REPORT\n";
-    csv += "Generated," + csvEscape(new Date().toLocaleString()) + ",Filter," + csvEscape(logDateFilter.toUpperCase()) + "\n\n";
+    csv += "Generated," + csvEscape(new Date().toLocaleString()) + ",Reporting Period," + csvEscape(periodLabel) + "\n\n";
 
-    csv += "SECTION 1: EXECUTIVE REVENUE SUMMARY\n";
+    csv += "SECTION 1: EXECUTIVE REVENUE & CASH BOX SUMMARY (" + csvEscape(periodLabel) + ")\n";
     csv += "Metric,Value\n";
-    csv += "Total Logged Revenue,$" + totalRev.toFixed(2) + "\n";
-    csv += "Cash Box Sales,$" + cashRev.toFixed(2) + "\n";
-    csv += "Electronic Sales (Card/Venmo/PayPal),$" + elecRev.toFixed(2) + "\n";
-    csv += "Total Units Sold," + totalUnits + "\n";
-    csv += "Total Orders," + filteredSales.length + "\n\n";
+    csv += "Reporting Period," + csvEscape(periodLabel) + "\n";
+    csv += "Period Total Revenue,$" + totalRev.toFixed(2) + "\n";
+    csv += "Period Cash Sales (Logged Revenue),$" + cashRev.toFixed(2) + "\n";
+    csv += "Period Electronic Sales (All Digital),$" + elecRev.toFixed(2) + "\n";
+    csv += "  - Card Sales,$" + (methodTotals["Card"] || 0).toFixed(2) + "\n";
+    csv += "  - PayPal Sales,$" + (methodTotals["PayPal"] || 0).toFixed(2) + "\n";
+    csv += "  - Venmo/Digital Sales,$" + (methodTotals["Venmo/Digital"] || 0).toFixed(2) + "\n";
+    csv += "Period Units Sold," + totalUnits + "\n";
+    csv += "Period Completed Orders," + filteredSales.length + "\n";
+    csv += "Current Physical Cash in Box (Live Balance),$" + getPhysicalCashInBox().toFixed(2) + "\n";
+    csv += "Starting Change / Float Left in Box,$" + (parseFloat(cashBoxConfig.startingCash) || 0).toFixed(2) + "\n\n";
 
-    csv += "SECTION 2: CURRENT INVENTORY & REMAINING STOCK VALUE\n";
-    csv += "Item Order,Item Name,Unit Price ($),2+ Patch Deal,Current Stock Remaining,Remaining Stock Value ($)\n";
+    csv += "SECTION 2: ITEM-BY-ITEM SALES & REVENUE BREAKDOWN (" + csvEscape(periodLabel) + ")\n";
+    csv += "Item Name,Standard Price ($),Units Sold in Period,Gross Revenue in Period ($),Avg Unit Price Charged ($),Current Stock Remaining,Remaining Stock Value ($)\n";
     let totalStockVal = 0;
-    inventory.forEach(function(item, idx) {
-      const p = Number(item.price) || 0;
-      const s = parseInt(item.stock, 10) || 0;
-      const val = p * s;
-      totalStockVal += val;
-      csv += (idx + 1) + "," + csvEscape(item.name) + "," + p.toFixed(2) + "," + (item.isPatchDeal ? "Yes ($7.50)" : "No") + "," + s + "," + val.toFixed(2) + "\n";
+    Object.keys(itemPerf).forEach(function(name) {
+      const st = itemPerf[name];
+      const avgCharged = st.qty > 0 ? (st.rev / st.qty) : st.stdPrice;
+      const remStockNum = typeof st.stock === "number" ? st.stock : 0;
+      const remVal = typeof st.stock === "number" ? (remStockNum * st.stdPrice) : 0;
+      totalStockVal += remVal;
+      csv += [
+        csvEscape(name),
+        st.stdPrice.toFixed(2),
+        st.qty,
+        st.rev.toFixed(2),
+        avgCharged.toFixed(2),
+        st.stock,
+        typeof st.stock === "number" ? remVal.toFixed(2) : "—"
+      ].join(",") + "\n";
     });
-    csv += ",,,,TOTAL INVENTORY VALUE,$" + totalStockVal.toFixed(2) + "\n\n";
+    csv += "TOTALS,," + totalUnits + ",$" + totalRev.toFixed(2) + ",,,$" + totalStockVal.toFixed(2) + "\n\n";
 
-    csv += "SECTION 3: ORDER-BY-ORDER SALES MATRIX (WITH ITEM COLUMNS & TOTALS)\n";
+    csv += "SECTION 3: CASH BOX & BANK DEPOSIT RECONCILIATION LOG\n";
+    csv += "Date/Time,Action,Performed By,Cash Before ($),Taken to Bank ($),Change Left in Box ($),Notes\n";
+    const hist = Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history : [];
+    if (hist.length === 0) {
+      csv += "No bank deposits or cash box adjustments logged yet.,,,,,,\n\n";
+    } else {
+      hist.forEach(function(h) {
+        csv += [
+          csvEscape(h.timestamp || ""),
+          csvEscape(h.action || ""),
+          csvEscape(h.bySeller || ""),
+          h.previousCash || "0.00",
+          h.takenToBank || "0.00",
+          h.leftInBox || "0.00",
+          csvEscape(h.note || "")
+        ].join(",") + "\n";
+      });
+      csv += "\n";
+    }
+
+    csv += "SECTION 4: ORDER-BY-ORDER SALES MATRIX (" + csvEscape(periodLabel) + ")\n";
     const headers = ["Order ID", "Date/Time", "Buyer Name", "Directorate", "Seller / Cashier", "Payment Method", "Total ($)", "Cash Paid ($)", "Change ($)", "Total Qty"]
       .concat(allItemNames.map(function(n) { return csvEscape("Qty: " + n); }));
     csv += headers.join(",") + "\n";
@@ -3219,11 +3992,11 @@
       csv += row.join(",") + "\n";
     });
 
-    const totalsRow = ["", "", "", "", "", "TOTALS", totalRev.toFixed(2), "", "", totalUnits]
+    const totalsRow = ["", "", "", "", "", "PERIOD TOTALS", totalRev.toFixed(2), "", "", totalUnits]
       .concat(allItemNames.map(function(n) { return colTotals[n]; }));
     csv += totalsRow.join(",") + "\n";
 
-    downloadFile("booster-master-report-" + new Date().toISOString().slice(0, 10) + ".csv", csv, "text/csv");
+    downloadFile("booster-treasurer-report-" + fileSlug + ".csv", csv, "text/csv");
   }
 
   function exportCurrentViewCSV() {
@@ -3264,7 +4037,7 @@
       const totRow = ["", "", "", "", "", "TOTALS", sumRev.toFixed(2), sumQty]
         .concat(allItemNames.map(function(n) { return colTotals[n]; }));
       csv += totRow.join(",") + "\n";
-      downloadFile("booster-sales-matrix-" + new Date().toISOString().slice(0, 10) + ".csv", csv, "text/csv");
+      downloadFile("booster-sales-matrix-" + getActiveFilterFilenameSlug() + ".csv", csv, "text/csv");
       return;
     }
 
@@ -3286,7 +4059,7 @@
         r.change || "0.00"
       ].join(",") + "\n";
     });
-    downloadFile("booster-sales-log-" + new Date().toISOString().slice(0, 10) + ".csv", csv, "text/csv");
+    downloadFile("booster-sales-log-" + getActiveFilterFilenameSlug() + ".csv", csv, "text/csv");
   }
 
   function exportSelfContainedHTML() {
@@ -3299,6 +4072,8 @@
     if (logsEl) logsEl.style.display = "none";
     const drawerEl = clone.querySelector("#cartPanel");
     if (drawerEl) drawerEl.classList.remove("open-drawer");
+    const editBannerEl = clone.querySelector("#editingOrderBanner");
+    if (editBannerEl) editBannerEl.style.display = "none";
     const gridEl = clone.querySelector("#itemsGrid");
     if (gridEl) gridEl.innerHTML = "";
     const invBodyEl = clone.querySelector("#invTableBody");
