@@ -878,6 +878,81 @@
       color: var(--primary);
     }
 
+    .item-btn.special-event-card {
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      border: 2px dashed #16a34a;
+    }
+    .item-btn.special-event-card:hover {
+      border-style: solid;
+      background: #dcfce7;
+    }
+    .btn-add-event-cart {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+      padding: 5px 9px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 0.76rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-add-event-cart:hover {
+      background: #bbf7d0;
+    }
+    .cat-pill-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .cat-pill-btn {
+      padding: 10px 8px;
+      border-radius: 8px;
+      border: 2px solid #cbd5e1;
+      background: #f8fafc;
+      font-weight: 800;
+      font-size: 0.82rem;
+      color: var(--text);
+      cursor: pointer;
+      text-align: center;
+    }
+    .cat-pill-btn.active {
+      border-color: var(--success);
+      background: #dcfce7;
+      color: #166534;
+    }
+    .preset-chips-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .preset-chip-btn {
+      padding: 5px 10px;
+      border-radius: 99px;
+      border: 1px solid #cbd5e1;
+      background: #f1f5f9;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+    }
+    .preset-chip-btn:hover {
+      background: #e2e8f0;
+      color: var(--primary);
+    }
+    .event-badge-tag {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      background: #dcfce7;
+      color: #166534;
+      margin-right: 4px;
+    }
+
     @media (max-width: 820px) {
       .main-container { grid-template-columns: 1fr; padding: 10px; padding-bottom: 76px; }
       .items-grid { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 10px; }
@@ -1088,6 +1163,7 @@
     <div class="cart-header">
       <h2 id="cartHeaderTitle">Current Order</h2>
       <div class="cart-header-btns">
+        <button type="button" class="btn-add-event-cart" onclick="openCustomEventModal()" title="Add a Donation, Chick-fil-A Fundraiser, Holiday Basket Auction, or other one-time event">+ Donation / Event</button>
         <button type="button" class="btn-clear" onclick="clearCart()">Clear All</button>
         <button type="button" class="btn-close-drawer" onclick="toggleMobileDrawer(false)">Done / Add More</button>
       </div>
@@ -1186,6 +1262,59 @@
   <button class="btn-mobile-checkout" type="button">Checkout / Pay &uarr;</button>
 </div>
 
+<div class="modal-backdrop" id="customEventModal">
+  <div class="modal" style="max-width: 500px;">
+    <div class="modal-header">
+      <h2 style="margin:0; font-size:1.08rem; color:#166534;">&#127881; Add Donation or One-Time Event</h2>
+      <button type="button" class="btn-header" style="background:#e2e8f0;" onclick="closeCustomEventModal()">Cancel</button>
+    </div>
+    <div class="modal-body">
+      <label style="font-size:0.72rem; font-weight:800; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:6px;">1. Select Type</label>
+      <div class="cat-pill-grid">
+        <button type="button" class="cat-pill-btn active" id="catBtn_Donation" onclick="selectCustomEventCategory('Donation')">&#128154; Donation</button>
+        <button type="button" class="cat-pill-btn" id="catBtn_Fundraiser" onclick="selectCustomEventCategory('Fundraiser')">&#127831; Fundraiser Sale</button>
+        <button type="button" class="cat-pill-btn" id="catBtn_Auction" onclick="selectCustomEventCategory('Auction')">&#127873; Basket / Auction</button>
+        <button type="button" class="cat-pill-btn" id="catBtn_Event" onclick="selectCustomEventCategory('Event')">&#127915; Other Event</button>
+      </div>
+
+      <label style="font-size:0.72rem; font-weight:800; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:4px;">Quick Presets (Tap to Auto-Fill)</label>
+      <div class="preset-chips-row">
+        <button type="button" class="preset-chip-btn" onclick="applyCustomEventPreset('Donation', 'General Booster Donation')">General Donation</button>
+        <button type="button" class="preset-chip-btn" onclick="applyCustomEventPreset('Fundraiser', 'Chick-fil-A Fundraiser')">Chick-fil-A Fundraiser</button>
+        <button type="button" class="preset-chip-btn" onclick="applyCustomEventPreset('Auction', 'Holiday Basket Auction')">Holiday Basket Auction</button>
+        <button type="button" class="preset-chip-btn" onclick="applyCustomEventPreset('Event', 'Bake Sale / Concessions')">Bake Sale / Concessions</button>
+        <button type="button" class="preset-chip-btn" onclick="applyCustomEventPreset('Event', '50/50 Raffle')">50/50 Raffle</button>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label for="customEventTitle" style="font-size:0.72rem; font-weight:800; color:var(--primary); text-transform:uppercase; display:block; margin-bottom:4px;">2. Event or Donation Description</label>
+        <input type="text" id="customEventTitle" placeholder="e.g., Chick-fil-A Fundraiser, Holiday Basket #2, Cash Donation" style="width:100%; padding:9px 10px; font-size:0.92rem; font-weight:600; border:1px solid #cbd5e1; border-radius:6px;">
+      </div>
+
+      <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px; margin-bottom:14px;">
+        <div>
+          <label for="customEventAmount" style="font-size:0.72rem; font-weight:800; color:var(--primary); text-transform:uppercase; display:block; margin-bottom:4px;">3. Dollar Amount ($)</label>
+          <input type="number" id="customEventAmount" placeholder="0.00" step="0.01" min="0.01" inputmode="decimal" style="width:100%; padding:9px 10px; font-size:1.1rem; font-weight:800; border:2px solid #86efac; border-radius:6px; background:#f0fdf4; color:#166534;" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCustomEventToCart();}">
+        </div>
+        <div>
+          <label for="customEventQty" style="font-size:0.72rem; font-weight:800; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:4px;">Qty</label>
+          <input type="number" id="customEventQty" value="1" min="1" step="1" style="width:100%; padding:9px 10px; font-size:1.05rem; font-weight:700; border:1px solid #cbd5e1; border-radius:6px;">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;">
+        <button type="button" class="qc-btn" style="flex:1;" onclick="setCustomEventQuickAmt(5)">$5</button>
+        <button type="button" class="qc-btn" style="flex:1;" onclick="setCustomEventQuickAmt(10)">$10</button>
+        <button type="button" class="qc-btn" style="flex:1;" onclick="setCustomEventQuickAmt(20)">$20</button>
+        <button type="button" class="qc-btn" style="flex:1;" onclick="setCustomEventQuickAmt(50)">$50</button>
+        <button type="button" class="qc-btn" style="flex:1;" onclick="setCustomEventQuickAmt(100)">$100</button>
+      </div>
+
+      <button type="button" class="btn-complete" onclick="submitCustomEventToCart()">+ Add to Current Order</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="invModal">
   <div class="modal">
     <div class="modal-header">
@@ -1280,9 +1409,13 @@
           <select id="monthSelectFilter" class="filter-select" onchange="onMonthDropdownChange(this.value)" title="Filter by a specific month or All-Time">
             <option value="all">Month: All-Time (Beginning to Now)</option>
           </select>
-          <div class="date-range-group" id="dateRangeGroup" title="Select a Start Date and/or End Date to view sales during that time">
-            <label for="rangeStartDate">From:</label>
-            <input type="date" id="rangeStartDate" onchange="setLogDateFilter('range')">
+          <div class="date-range-group" id="singleDateGroup" title="Pick a single calendar date to view only that day's sales &amp; events in one click">
+            <label for="singleDateInput">&#128197; Single Date:</label>
+            <input type="date" id="singleDateInput" onchange="onSingleDateChange(this.value)">
+          </div>
+          <div class="date-range-group" id="dateRangeGroup" title="Select a Start Date and End Date to view sales across a multi-day range">
+            <label for="rangeStartDate">Range:</label>
+            <input type="date" id="rangeStartDate" onchange="onRangeStartDateChange(this.value)">
             <label for="rangeEndDate">To:</label>
             <input type="date" id="rangeEndDate" onchange="setLogDateFilter('range')">
           </div>
@@ -1297,6 +1430,7 @@
         <div class="summary-pill">
           <span id="sumTotalLabel">Filtered Revenue</span>
           <strong id="sumTotal">$0.00</strong>
+          <small id="sumTotalSub" style="display:block; font-size:0.68rem; color:var(--muted); margin-top:2px; font-weight:700;"></small>
         </div>
         <div class="summary-pill">
           <span id="sumCashLabel">Cash Sales (Revenue)</span>
@@ -1307,8 +1441,9 @@
           <strong id="sumElec" style="color:var(--primary-light);">$0.00</strong>
         </div>
         <div class="summary-pill">
-          <span>Total Items Sold</span>
+          <span id="sumItemsLabel">Merch Items Sold</span>
           <strong id="sumItemsCount">0</strong>
+          <small id="sumEventsCountSub" style="display:block; font-size:0.68rem; color:#166534; margin-top:2px; font-weight:700;"></small>
         </div>
       </div>
 
@@ -1585,6 +1720,8 @@
   let enteredPin = "";
 
   let cart = {};
+  let customCartItems = [];
+  let selectedCustomEventCat = "Donation";
   let currentPaymentMethod = "Cash";
   let keepChangeRefused = false;
   let pendingNewImage = "";
@@ -1597,6 +1734,186 @@
   let logDateFilter = "all";
   let lastKnownSheetOrderIds = new Set();
 
+  function isCustomOrEventItemName(name) {
+    return /^\[(Donation|Fundraiser|Auction|Event)\]/i.test(String(name || "").trim());
+  }
+
+  function parseCustomEventItemName(name) {
+    const raw = String(name || "").trim();
+    const m = raw.match(/^\[(Donation|Fundraiser|Auction|Event)\]\s*(.+)$/i);
+    if (m) {
+      return { isCustom: true, category: m[1], title: m[2].trim(), fullName: raw };
+    }
+    return { isCustom: false, category: "Merchandise", title: raw, fullName: raw };
+  }
+
+  function getOrderCustomEventsBreakdown(sale) {
+    const events = [];
+    let eventsRev = 0;
+    let eventsQty = 0;
+    let merchRev = 0;
+    let merchQty = 0;
+    if (!sale) return { events: events, eventsRev: 0, eventsQty: 0, merchRev: 0, merchQty: 0 };
+
+    if (Array.isArray(sale.lineItems) && sale.lineItems.length > 0) {
+      sale.lineItems.forEach(function(li) {
+        if (!li || isSettingsItemName(li.itemName)) return;
+        const q = parseInt(li.qty, 10) || 1;
+        const sub = parseFloat(li.lineSubtotal) || ((parseFloat(li.unitPriceCharged) || 0) * q);
+        if (isCustomOrEventItemName(li.itemName)) {
+          const parsed = parseCustomEventItemName(li.itemName);
+          events.push({
+            category: parsed.category,
+            title: parsed.title,
+            fullName: parsed.fullName,
+            qty: q,
+            subtotal: sub
+          });
+          eventsRev += sub;
+          eventsQty += q;
+        } else {
+          merchRev += sub;
+          merchQty += q;
+        }
+      });
+    } else if (typeof sale.items === "string" && sale.items) {
+      sale.items.split(";").forEach(function(part) {
+        const m = part.trim().match(/^(\d+)x\s+(.+?)\s*\(\$([0-9.]+)\)/i);
+        if (m) {
+          const q = parseInt(m[1], 10) || 1;
+          const rawName = m[2].trim();
+          const unitP = parseFloat(m[3]) || 0;
+          const sub = unitP * q;
+          if (isCustomOrEventItemName(rawName)) {
+            const parsed = parseCustomEventItemName(rawName);
+            events.push({
+              category: parsed.category,
+              title: parsed.title,
+              fullName: parsed.fullName,
+              qty: q,
+              subtotal: sub
+            });
+            eventsRev += sub;
+            eventsQty += q;
+          } else {
+            merchRev += sub;
+            merchQty += q;
+          }
+        }
+      });
+    }
+    const totalOrderAmt = parseFloat(sale.total) || 0;
+    if (events.length === 0 && merchRev === 0) {
+      merchRev = totalOrderAmt;
+      merchQty = parseInt(sale.totalQty, 10) || 0;
+    }
+    return {
+      events: events,
+      eventsRev: eventsRev,
+      eventsQty: eventsQty,
+      merchRev: merchRev,
+      merchQty: merchQty
+    };
+  }
+
+  function openCustomEventModal() {
+    selectCustomEventCategory("Donation");
+    const titleEl = document.getElementById("customEventTitle");
+    const amtEl = document.getElementById("customEventAmount");
+    const qtyEl = document.getElementById("customEventQty");
+    if (titleEl) titleEl.value = "General Booster Donation";
+    if (amtEl) amtEl.value = "";
+    if (qtyEl) qtyEl.value = "1";
+    const modal = document.getElementById("customEventModal");
+    if (modal) modal.style.display = "flex";
+    setTimeout(function() {
+      if (amtEl) amtEl.focus();
+    }, 80);
+  }
+
+  function closeCustomEventModal() {
+    const modal = document.getElementById("customEventModal");
+    if (modal) modal.style.display = "none";
+  }
+
+  function selectCustomEventCategory(cat) {
+    selectedCustomEventCat = cat;
+    ["Donation", "Fundraiser", "Auction", "Event"].forEach(function(c) {
+      const btn = document.getElementById("catBtn_" + c);
+      if (btn) btn.classList.toggle("active", c === cat);
+    });
+    const titleInput = document.getElementById("customEventTitle");
+    if (titleInput) {
+      const currentVal = titleInput.value.trim();
+      const defaults = ["", "General Booster Donation", "Fundraiser Sale", "Holiday Basket Auction", "Special Booster Event"];
+      if (defaults.indexOf(currentVal) !== -1) {
+        if (cat === "Donation") titleInput.value = "General Booster Donation";
+        else if (cat === "Fundraiser") titleInput.value = "Fundraiser Sale";
+        else if (cat === "Auction") titleInput.value = "Holiday Basket Auction";
+        else titleInput.value = "Special Booster Event";
+      }
+    }
+  }
+
+  function applyCustomEventPreset(cat, presetTitle) {
+    selectCustomEventCategory(cat);
+    const titleInput = document.getElementById("customEventTitle");
+    if (titleInput) titleInput.value = presetTitle;
+    const amtEl = document.getElementById("customEventAmount");
+    if (amtEl) amtEl.focus();
+  }
+
+  function setCustomEventQuickAmt(amt) {
+    const amtEl = document.getElementById("customEventAmount");
+    if (amtEl) amtEl.value = Number(amt).toFixed(2);
+  }
+
+  function submitCustomEventToCart() {
+    const rawTitle = (document.getElementById("customEventTitle").value || "")
+      .replace(/;/g, " -")
+      .replace(/[\[\]]/g, "")
+      .replace(/\(\$/g, "($ ")
+      .trim();
+    const amt = parseFloat(document.getElementById("customEventAmount").value);
+    const qty = Math.max(1, parseInt(document.getElementById("customEventQty").value, 10) || 1);
+    if (isNaN(amt) || amt <= 0) {
+      alert("Please enter a valid dollar amount greater than $0.00.");
+      return;
+    }
+    const cleanTitle = rawTitle || (selectedCustomEventCat === "Donation" ? "General Booster Donation" : selectedCustomEventCat);
+    const formattedName = "[" + selectedCustomEventCat + "] " + cleanTitle;
+
+    const existing = customCartItems.find(function(ci) {
+      return ci.name.toLowerCase() === formattedName.toLowerCase() && Math.abs(ci.unitPrice - amt) < 0.005;
+    });
+    if (existing) {
+      existing.qty += qty;
+    } else {
+      customCartItems.push({
+        uid: "cust_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+        category: selectedCustomEventCat,
+        title: cleanTitle,
+        name: formattedName,
+        unitPrice: amt,
+        qty: qty
+      });
+    }
+    closeCustomEventModal();
+    renderGrid();
+    renderCart();
+  }
+
+  function changeCustomCartQty(uid, delta) {
+    const idx = customCartItems.findIndex(function(ci) { return ci.uid === uid; });
+    if (idx === -1) return;
+    customCartItems[idx].qty += delta;
+    if (customCartItems[idx].qty <= 0) {
+      customCartItems.splice(idx, 1);
+    }
+    renderGrid();
+    renderCart();
+  }
+
   function getSoldQuantitiesFromLog() {
     const soldMap = {};
     if (!Array.isArray(salesLog)) return soldMap;
@@ -1604,11 +1921,13 @@
       if (!sale) return;
       if (Array.isArray(sale.lineItems) && sale.lineItems.length > 0) {
         sale.lineItems.forEach(function(li) {
+          if (isCustomOrEventItemName(li.itemName)) return;
           const k = String(li.itemName || "").trim().toLowerCase();
           if (k) soldMap[k] = (soldMap[k] || 0) + (parseInt(li.qty, 10) || 0);
         });
       } else if (sale.itemQuantities) {
         Object.keys(sale.itemQuantities).forEach(function(k) {
+          if (isCustomOrEventItemName(k)) return;
           const key = String(k || "").trim().toLowerCase();
           const q = parseInt(sale.itemQuantities[k], 10) || 0;
           if (key && q > 0) soldMap[key] = (soldMap[key] || 0) + q;
@@ -1617,8 +1936,10 @@
         sale.items.split(";").forEach(function(part) {
           const m = part.trim().match(/^(\d+)x\s+(.+?)\s*\(\$/i);
           if (m) {
+            const rawName = m[2].trim();
+            if (isCustomOrEventItemName(rawName)) return;
             const q = parseInt(m[1], 10) || 0;
-            const key = m[2].trim().toLowerCase();
+            const key = rawName.toLowerCase();
             if (key && q > 0) soldMap[key] = (soldMap[key] || 0) + q;
           }
         });
@@ -1860,11 +2181,11 @@
   });
 
   function isSameLocalDate(timestampStr, targetDateObj) {
-    if (!timestampStr) return false;
+    if (!timestampStr || !targetDateObj) return false;
     const prefix = targetDateObj.toLocaleDateString();
     if (String(timestampStr).indexOf(prefix) === 0) return true;
-    const parsed = new Date(timestampStr);
-    if (!isNaN(parsed.getTime())) {
+    const parsed = parseSaleTimestampToDate(timestampStr);
+    if (parsed && !isNaN(parsed.getTime())) {
       return parsed.getFullYear() === targetDateObj.getFullYear() &&
              parsed.getMonth() === targetDateObj.getMonth() &&
              parsed.getDate() === targetDateObj.getDate();
@@ -2158,6 +2479,30 @@
         '</span>';
       grid.appendChild(btn);
     });
+
+    // Special action card on register grid for Donations & One-Time Events
+    const customCountInCart = customCartItems.reduce(function(s, ci) { return s + (parseInt(ci.qty, 10) || 0); }, 0);
+    const eventBtn = document.createElement("button");
+    eventBtn.type = "button";
+    eventBtn.className = "item-btn special-event-card" + (customCountInCart > 0 ? " in-cart-highlight" : "");
+    eventBtn.onclick = function() {
+      openCustomEventModal();
+    };
+    const eventFloaterHTML = customCountInCart > 0 ? '<span class="cart-count-floater" style="background:#16a34a;">' + customCountInCart + ' added</span>' : "";
+    eventBtn.innerHTML =
+      eventFloaterHTML +
+      '<div style="width:100%;">' +
+        '<div class="item-img-box" style="background:#dcfce7; border-color:#86efac; flex-direction:column; gap:2px;">' +
+          '<span style="font-size:2rem; line-height:1;">&#127881;</span>' +
+          '<span style="font-size:0.68rem; font-weight:800; color:#166534; text-transform:uppercase;">Custom $ Entry</span>' +
+        '</div>' +
+        '<div class="item-name" style="color:#14532d;">+ Donation / Event</div>' +
+        '<div class="item-price-row">' +
+          '<span class="item-price" style="color:#16a34a; font-size:0.95rem;">Any Amount ($)</span>' +
+        '</div>' +
+      '</div>' +
+      '<span class="stock-badge" style="background:#bbf7d0; color:#14532d;">Donations &bull; Chick-fil-A &bull; Auctions</span>';
+    grid.appendChild(eventBtn);
   }
 
   function addToCart(id) {
@@ -2183,6 +2528,7 @@
 
   function clearCart() {
     cart = {};
+    customCartItems = [];
     keepChangeRefused = false;
     document.getElementById("cashInput").value = "";
     document.getElementById("buyerName").value = "";
@@ -2194,17 +2540,27 @@
 
   function getCartTotal() {
     const totalPatches = getPatchCountInCart();
-    return Object.entries(cart).reduce(function(sum, entry) {
+    const merchSum = Object.entries(cart).reduce(function(sum, entry) {
       const id = entry[0];
       const qty = entry[1];
       const item = inventory.find(function(i) { return i.id == id; });
       if (!item) return sum;
       return sum + (getEffectiveUnitPrice(item, totalPatches) * qty);
     }, 0);
+    const customSum = customCartItems.reduce(function(sum, ci) {
+      return sum + ((parseFloat(ci.unitPrice) || 0) * (parseInt(ci.qty, 10) || 1));
+    }, 0);
+    return merchSum + customSum;
+  }
+
+  function getCartMerchQty() {
+    return Object.values(cart).reduce(function(s, q) { return s + q; }, 0);
   }
 
   function getCartTotalQty() {
-    return Object.values(cart).reduce(function(s, q) { return s + q; }, 0);
+    const merchQty = getCartMerchQty();
+    const customQty = customCartItems.reduce(function(s, ci) { return s + (parseInt(ci.qty, 10) || 1); }, 0);
+    return merchQty + customQty;
   }
 
   function renderCart() {
@@ -2217,8 +2573,8 @@
     document.getElementById("mobileBarQty").textContent = totalQty + " item" + (totalQty === 1 ? "" : "s") + " in order";
     document.getElementById("mobileBarTotal").textContent = "Total: $" + total.toFixed(2);
 
-    if (entries.length === 0) {
-      container.innerHTML = '<p style="color: var(--muted); text-align: center; margin-top: 24px;">Tap items to add to order</p>';
+    if (entries.length === 0 && customCartItems.length === 0) {
+      container.innerHTML = '<p style="color: var(--muted); text-align: center; margin-top: 24px;">Tap items or <strong>+ Donation / Event</strong> to add to order</p>';
       document.getElementById("totalDue").textContent = "$0.00";
       const compBtn = document.getElementById("completeBtn");
       compBtn.disabled = true;
@@ -2256,6 +2612,29 @@
           '<button type="button" class="qty-btn" onclick="changeCartQty(\'' + item.id + '\', -1)">-</button>' +
           '<span style="font-weight:800; min-width:22px; text-align:center;">' + qty + '</span>' +
           '<button type="button" class="qty-btn" onclick="changeCartQty(\'' + item.id + '\', 1)">+</button>' +
+        '</div>';
+      container.appendChild(row);
+    });
+
+    customCartItems.forEach(function(ci) {
+      const unitPrice = parseFloat(ci.unitPrice) || 0;
+      const qty = parseInt(ci.qty, 10) || 1;
+      const sub = unitPrice * qty;
+      const row = document.createElement("div");
+      row.className = "cart-row";
+      row.style.background = "#f0fdf4";
+      row.style.padding = "7px 6px";
+      row.style.borderRadius = "6px";
+      row.style.marginBottom = "4px";
+      row.innerHTML =
+        '<div class="cart-row-info">' +
+          '<div class="cart-row-title"><span class="event-badge-tag">' + ci.category + '</span>' + ci.title + '</div>' +
+          '<div class="cart-row-sub" style="color:#166534; font-weight:600;">$' + unitPrice.toFixed(2) + ' each &bull; Subtotal: $' + sub.toFixed(2) + ' (No stock impact)</div>' +
+        '</div>' +
+        '<div class="qty-controls">' +
+          '<button type="button" class="qty-btn" onclick="changeCustomCartQty(\'' + ci.uid + '\', -1)">-</button>' +
+          '<span style="font-weight:800; min-width:22px; text-align:center;">' + qty + '</span>' +
+          '<button type="button" class="qty-btn" onclick="changeCustomCartQty(\'' + ci.uid + '\', 1)">+</button>' +
         '</div>';
       container.appendChild(row);
     });
@@ -2335,6 +2714,10 @@
 
   function getOrderKeptChangeAmount(sale) {
     if (!sale || (sale.paymentMethod || "Cash") !== "Cash") return 0;
+    const explicitKept = parseFloat(sale.keptChange);
+    if (!isNaN(explicitKept) && explicitKept > 0.004) {
+      return Number(explicitKept.toFixed(2));
+    }
     const itemTotal = parseFloat(sale.total) || 0;
     const paid = parseFloat(sale.cashPaid);
     const chg = parseFloat(sale.change);
@@ -2342,6 +2725,13 @@
       const netKept = paid - chg;
       const extra = netKept - itemTotal;
       if (extra > 0.004) return Number(extra.toFixed(2));
+    }
+    if (typeof sale.items === "string" && sale.items.indexOf("[Kept Change:") !== -1) {
+      const m = sale.items.match(/\[Kept Change:\s*\+?\$([0-9.]+)\]/i);
+      if (m) {
+        const parsedKept = parseFloat(m[1]);
+        if (!isNaN(parsedKept) && parsedKept > 0.004) return Number(parsedKept.toFixed(2));
+      }
     }
     return 0;
   }
@@ -2595,7 +2985,7 @@
     const sale = salesLog[idx];
     const parsed = parseBuyerAndSeller(sale);
 
-    if (Object.keys(cart).length > 0) {
+    if (Object.keys(cart).length > 0 || customCartItems.length > 0) {
       if (!confirm("Your current register cart has items in it. Replace the cart with this past order to edit it?")) {
         return;
       }
@@ -2609,9 +2999,24 @@
     // Temporarily put the original order's items back into stock and load them into the cart
     restoreSaleStockToInventory(sale);
     cart = {};
+    customCartItems = [];
 
     if (Array.isArray(sale.lineItems) && sale.lineItems.length > 0) {
       sale.lineItems.forEach(function(li) {
+        if (isCustomOrEventItemName(li.itemName)) {
+          const parsedCust = parseCustomEventItemName(li.itemName);
+          const q = parseInt(li.qty, 10) || 1;
+          const up = parseFloat(li.unitPriceCharged) || ((parseFloat(li.lineSubtotal) || 0) / q);
+          customCartItems.push({
+            uid: "cust_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+            category: parsedCust.category,
+            title: parsedCust.title,
+            name: parsedCust.fullName,
+            unitPrice: up,
+            qty: q
+          });
+          return;
+        }
         const match = inventory.find(function(invItem) {
           return String(invItem.name).trim().toLowerCase() === String(li.itemName || "").trim().toLowerCase();
         });
@@ -2619,18 +3024,37 @@
           cart[match.id] = (cart[match.id] || 0) + (parseInt(li.qty, 10) || 0);
         }
       });
-    } else if (sale.itemQuantities) {
-      Object.keys(sale.itemQuantities).forEach(function(k) {
-        const q = parseInt(sale.itemQuantities[k], 10) || 0;
-        if (q > 0) {
-          const match = inventory.find(function(invItem) {
-            return String(invItem.name).trim().toLowerCase() === String(k).trim().toLowerCase();
-          });
-          if (match) {
-            cart[match.id] = (cart[match.id] || 0) + q;
+    } else {
+      if (sale.itemQuantities) {
+        Object.keys(sale.itemQuantities).forEach(function(k) {
+          if (isCustomOrEventItemName(k)) return;
+          const q = parseInt(sale.itemQuantities[k], 10) || 0;
+          if (q > 0) {
+            const match = inventory.find(function(invItem) {
+              return String(invItem.name).trim().toLowerCase() === String(k).trim().toLowerCase();
+            });
+            if (match) {
+              cart[match.id] = (cart[match.id] || 0) + q;
+            }
           }
-        }
-      });
+        });
+      }
+      // Also restore any custom Donations/Events from the summary string if pulled from Google Sheets
+      const customInfo = getOrderCustomEventsBreakdown(sale);
+      if (customInfo.events.length > 0) {
+        customInfo.events.forEach(function(ev) {
+          const q = parseInt(ev.qty, 10) || 1;
+          const up = (parseFloat(ev.subtotal) || 0) / q;
+          customCartItems.push({
+            uid: "cust_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+            category: ev.category,
+            title: ev.title,
+            name: ev.fullName,
+            unitPrice: up,
+            qty: q
+          });
+        });
+      }
     }
 
     // Remove the old order from salesLog while editing
@@ -2677,9 +3101,13 @@
     renderCart();
   }
 
+  let isCompletingSale = false;
   function completeSale() {
+    if (isCompletingSale) return;
     const total = getCartTotal();
     if (total <= 0) return;
+    isCompletingSale = true;
+    setTimeout(function() { isCompletingSale = false; }, 600);
 
     const wasEditing = editingSaleBackup && editingSaleBackup.sale ? editingSaleBackup.sale : null;
 
@@ -2733,6 +3161,21 @@
         soldSummaryParts.push(qty + "x " + item.name + " ($" + unitPrice.toFixed(2) + ")");
         totalQty += qty;
       }
+    });
+
+    customCartItems.forEach(function(ci) {
+      const qty = parseInt(ci.qty, 10) || 1;
+      const unitPrice = parseFloat(ci.unitPrice) || 0;
+      const lineSubtotal = unitPrice * qty;
+      lineItems.push({
+        itemName: ci.name,
+        qty: qty,
+        unitPriceCharged: unitPrice.toFixed(2),
+        lineSubtotal: lineSubtotal.toFixed(2),
+        isCustomEvent: true,
+        eventCategory: ci.category
+      });
+      soldSummaryParts.push(qty + "x " + ci.name + " ($" + unitPrice.toFixed(2) + ")");
     });
 
     if (keptChangeAmt > 0.004) {
@@ -2849,12 +3292,16 @@
         };
       });
 
+    const cappedVoided = Array.isArray(voidedOrderIds) ? voidedOrderIds.slice(-300) : [];
+    const cappedCashBox = Object.assign({}, cashBoxConfig, {
+      history: Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history.slice(0, 20) : []
+    });
     const settingsObj = {
       sellers: sellersRoster,
       pin: appPin,
       baseStocks: baseStockMap,
-      voidedOrders: voidedOrderIds,
-      cashBox: cashBoxConfig
+      voidedOrders: cappedVoided,
+      cashBox: cappedCashBox
     };
     const settingsJson = JSON.stringify(settingsObj);
 
@@ -3020,6 +3467,9 @@
   function mergeCloudSalesWithLocal(cloudSales) {
     if (!Array.isArray(cloudSales)) return;
     const voidSet = new Set(voidedOrderIds.map(String));
+    if (editingSaleBackup && editingSaleBackup.sale && editingSaleBackup.sale.orderId) {
+      voidSet.add(String(editingSaleBackup.sale.orderId));
+    }
     const filteredCloud = cloudSales
       .filter(function(s) { return s && !voidSet.has(String(s.orderId || "")); })
       .map(function(s) {
@@ -3058,7 +3508,7 @@
 
   function pullInventoryFromCloud(silent) {
     if (!cloudUrl) return;
-    if (silent && isInventoryModalOpen()) return;
+    if (silent && (isInventoryModalOpen() || editingSaleBackup !== null)) return;
     pruneVoidedFromOfflineQueue();
     if (!silent && offlineQueue.length > 0) {
       flushOfflineQueue(true);
@@ -3448,7 +3898,7 @@
   }
 
   function addNewItem() {
-    const name = document.getElementById("newItemName").value.trim();
+    const name = document.getElementById("newItemName").value.replace(/;/g, " -").replace(/^[\[\]]+/g, "").trim();
     const price = parseFloat(document.getElementById("newItemPrice").value) || 0;
     const stock = parseInt(document.getElementById("newItemStock").value, 10) || 0;
     const isPatchDeal = document.getElementById("newItemPatchDeal").checked;
@@ -3567,12 +4017,30 @@
     }
   }
 
+  function onSingleDateChange(val) {
+    if (!val) {
+      setLogDateFilter("all");
+      return;
+    }
+    setLogDateFilter("single");
+  }
+
+  function onRangeStartDateChange(val) {
+    const endInput = document.getElementById("rangeEndDate");
+    if (val && endInput && (!endInput.value || endInput.value < val)) {
+      endInput.value = val;
+    }
+    setLogDateFilter("range");
+  }
+
   function setLogDateFilter(mode) {
     logDateFilter = mode;
     const btnAll = document.getElementById("filterBtnAll");
     const btnThisMonth = document.getElementById("filterBtnThisMonth");
     const btnToday = document.getElementById("filterBtnToday");
     const monthSel = document.getElementById("monthSelectFilter");
+    const singleGroup = document.getElementById("singleDateGroup");
+    const singleInput = document.getElementById("singleDateInput");
     const rangeGroup = document.getElementById("dateRangeGroup");
     const startInput = document.getElementById("rangeStartDate");
     const endInput = document.getElementById("rangeEndDate");
@@ -3586,6 +4054,12 @@
     if (monthSel) {
       if (mode !== "month") monthSel.value = "all";
       monthSel.classList.toggle("active-select", mode === "month");
+    }
+    if (singleGroup) {
+      singleGroup.classList.toggle("active-range", mode === "single");
+    }
+    if (mode !== "single" && singleInput) {
+      singleInput.value = "";
     }
     if (rangeGroup) {
       rangeGroup.classList.toggle("active-range", mode === "range");
@@ -3602,6 +4076,10 @@
     if (logDateFilter === "today") {
       return "Today Only (" + todayStr + ")";
     }
+    if (logDateFilter === "single") {
+      const dVal = (document.getElementById("singleDateInput") || {}).value || "";
+      if (dVal) return "Single Date: " + dVal;
+    }
     if (logDateFilter === "month") {
       const sel = document.getElementById("monthSelectFilter");
       const ym = sel ? sel.value : "";
@@ -3612,7 +4090,10 @@
     if (logDateFilter === "range") {
       const sVal = (document.getElementById("rangeStartDate") || {}).value || "";
       const eVal = (document.getElementById("rangeEndDate") || {}).value || "";
-      if (sVal && eVal) return "Date Range: " + sVal + " to " + eVal;
+      if (sVal && eVal) {
+        if (sVal === eVal) return "Single Date: " + sVal;
+        return "Date Range: " + sVal + " to " + eVal;
+      }
       if (sVal) return "From " + sVal + " to " + todayStr;
       if (eVal) return "Up through " + eVal;
     }
@@ -3622,6 +4103,10 @@
   function getActiveFilterFilenameSlug() {
     const isoToday = new Date().toISOString().slice(0, 10);
     if (logDateFilter === "today") return "today-" + isoToday;
+    if (logDateFilter === "single") {
+      const dVal = (document.getElementById("singleDateInput") || {}).value || isoToday;
+      return "date-" + dVal;
+    }
     if (logDateFilter === "month") {
       const sel = document.getElementById("monthSelectFilter");
       if (sel && sel.value && sel.value !== "all") return "month-" + sel.value;
@@ -3629,6 +4114,7 @@
     if (logDateFilter === "range") {
       const sVal = (document.getElementById("rangeStartDate") || {}).value || "start";
       const eVal = (document.getElementById("rangeEndDate") || {}).value || isoToday;
+      if (sVal === eVal) return "date-" + sVal;
       return sVal + "_to_" + eVal;
     }
     return "all-time-thru-" + isoToday;
@@ -3638,6 +4124,13 @@
     if (logDateFilter === "today") {
       const today = new Date();
       return salesLog.filter(function(s) { return s && isSameLocalDate(s.timestamp, today); });
+    }
+    if (logDateFilter === "single") {
+      const dVal = (document.getElementById("singleDateInput") || {}).value || "";
+      if (!dVal) return salesLog;
+      const dp = dVal.split("-");
+      const targetDate = new Date(parseInt(dp[0], 10), parseInt(dp[1], 10) - 1, parseInt(dp[2], 10));
+      return salesLog.filter(function(s) { return s && isSameLocalDate(s.timestamp, targetDate); });
     }
     if (logDateFilter === "month") {
       const sel = document.getElementById("monthSelectFilter");
@@ -3707,7 +4200,7 @@
     salesLog.forEach(function(sale) {
       if (sale && sale.itemQuantities) {
         Object.keys(sale.itemQuantities).forEach(function(k) {
-          if (!isSettingsItemName(k) && allItemNames.indexOf(k) === -1) {
+          if (!isSettingsItemName(k) && !isCustomOrEventItemName(k) && allItemNames.indexOf(k) === -1) {
             allItemNames.push(k);
           }
         });
@@ -3723,6 +4216,7 @@
       itemStats[i.name] = { qty: 0, rev: 0, stock: i.stock };
     });
 
+    const eventStats = {};
     const sellerStats = {};
     const dirStats = {};
 
@@ -3744,17 +4238,27 @@
       dirStats[dirKey].units += units;
       dirStats[dirKey].rev += amt;
 
+      const customBreakdown = getOrderCustomEventsBreakdown(sale);
+      customBreakdown.events.forEach(function(ev) {
+        const key = ev.fullName;
+        if (!eventStats[key]) {
+          eventStats[key] = { category: ev.category, title: ev.title, count: 0, rev: 0 };
+        }
+        eventStats[key].count += ev.qty;
+        eventStats[key].rev += ev.subtotal;
+      });
+
       if (Array.isArray(sale.lineItems) && sale.lineItems.length > 0) {
         sale.lineItems.forEach(function(li) {
           const k = li.itemName;
-          if (isSettingsItemName(k)) return;
+          if (isSettingsItemName(k) || isCustomOrEventItemName(k)) return;
           if (!itemStats[k]) itemStats[k] = { qty: 0, rev: 0, stock: "—" };
           itemStats[k].qty += parseInt(li.qty, 10) || 0;
           itemStats[k].rev += parseFloat(li.lineSubtotal) || 0;
         });
       } else if (sale.itemQuantities) {
         Object.keys(sale.itemQuantities).forEach(function(k) {
-          if (isSettingsItemName(k)) return;
+          if (isSettingsItemName(k) || isCustomOrEventItemName(k)) return;
           const q = parseInt(sale.itemQuantities[k], 10) || 0;
           if (q > 0) {
             if (!itemStats[k]) itemStats[k] = { qty: 0, rev: 0, stock: "—" };
@@ -3769,6 +4273,13 @@
     }).map(function(name) {
       const st = itemStats[name];
       return "<tr><td><strong>" + name + "</strong></td><td style='text-align:center;font-weight:800;'>" + st.qty + "</td><td>$" + st.rev.toFixed(2) + "</td><td style='text-align:center;'>" + st.stock + "</td></tr>";
+    }).join("");
+
+    const eventRows = Object.keys(eventStats).sort(function(a, b) {
+      return eventStats[b].rev - eventStats[a].rev;
+    }).map(function(key) {
+      const ev = eventStats[key];
+      return "<tr><td><span class='event-badge-tag'>" + ev.category + "</span><strong>" + ev.title + "</strong></td><td style='text-align:center;font-weight:800;'>" + ev.count + "</td><td style='font-weight:800;color:#16a34a;'>$" + ev.rev.toFixed(2) + "</td></tr>";
     }).join("");
 
     const sellerRows = Object.keys(sellerStats).sort(function(a, b) {
@@ -3786,22 +4297,28 @@
     }).join("");
 
     container.innerHTML =
-      '<div class="breakdown-grid">' +
+      '<div class="breakdown-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">' +
         '<div class="breakdown-card">' +
           '<h4>&#127942; Best-Selling Merchandise</h4>' +
           '<table class="inv-table" style="margin:0;"><thead><tr><th>Item</th><th style="text-align:center;">Sold</th><th>Revenue</th><th style="text-align:center;">Left</th></tr></thead><tbody>' +
-            (itemRows || '<tr><td colspan="4">No sales in selected period.</td></tr>') +
+            (itemRows || '<tr><td colspan="4">No merchandise sales in selected period.</td></tr>') +
+          '</tbody></table>' +
+        '</div>' +
+        '<div class="breakdown-card" style="background:#f0fdf4; border-color:#bbf7d0;">' +
+          '<h4 style="color:#166534;">&#127881; Donations &amp; One-Time Events</h4>' +
+          '<table class="inv-table" style="margin:0;"><thead><tr><th>Event / Donation</th><th style="text-align:center;">Count</th><th>Total Raised</th></tr></thead><tbody>' +
+            (eventRows || '<tr><td colspan="3" style="color:var(--muted);">No donations or events logged in this period.</td></tr>') +
           '</tbody></table>' +
         '</div>' +
         '<div class="breakdown-card">' +
           '<h4>&#128100; Sales by Seller / Cashier</h4>' +
-          '<table class="inv-table" style="margin:0;"><thead><tr><th>Seller</th><th style="text-align:center;">Orders</th><th style="text-align:center;">Items</th><th>Revenue</th></tr></thead><tbody>' +
+          '<table class="inv-table" style="margin:0;"><thead><tr><th>Seller</th><th style="text-align:center;">Orders</th><th style="text-align:center;">Merch</th><th>Revenue</th></tr></thead><tbody>' +
             (sellerRows || '<tr><td colspan="4">No sales in selected period.</td></tr>') +
           '</tbody></table>' +
         '</div>' +
         '<div class="breakdown-card">' +
           '<h4>&#127970; Directorate Leaderboard</h4>' +
-          '<table class="inv-table" style="margin:0;"><thead><tr><th>Directorate</th><th style="text-align:center;">Orders</th><th style="text-align:center;">Items</th><th>Total</th></tr></thead><tbody>' +
+          '<table class="inv-table" style="margin:0;"><thead><tr><th>Directorate</th><th style="text-align:center;">Orders</th><th style="text-align:center;">Merch</th><th>Total</th></tr></thead><tbody>' +
             (dirRows || '<tr><td colspan="4">No sales in selected period.</td></tr>') +
           '</tbody></table>' +
         '</div>' +
@@ -3816,6 +4333,9 @@
     const filteredSales = getFilteredSalesLog();
 
     let totalAll = 0;
+    let totalMerchRev = 0;
+    let totalEventsRev = 0;
+    let totalEventsCount = 0;
     let totalCash = 0;
     let totalKeptChange = 0;
     let totalElec = 0;
@@ -3825,7 +4345,11 @@
       if (!e) return;
       const amt = parseFloat(e.total) || 0;
       const kept = getOrderKeptChangeAmount(e);
+      const customInfo = getOrderCustomEventsBreakdown(e);
       totalAll += amt;
+      totalEventsRev += customInfo.eventsRev;
+      totalEventsCount += customInfo.eventsQty;
+      totalMerchRev += Math.max(0, amt - customInfo.eventsRev);
       totalUnits += parseInt(e.totalQty, 10) || 0;
       if ((e.paymentMethod || "Cash") === "Cash") {
         totalCash += amt;
@@ -3837,12 +4361,24 @@
 
     populateMonthDropdownOptions();
     const periodDesc = getActiveFilterPeriodDescription();
-    document.getElementById("sumTotalLabel").textContent = logDateFilter === "all" ? "All-Time Item Revenue" : (logDateFilter === "today" ? "Today's Item Revenue" : "Period Item Revenue");
+    document.getElementById("sumTotalLabel").textContent = logDateFilter === "all" ? "All-Time Total Revenue" : (logDateFilter === "today" ? "Today's Total Revenue" : "Period Total Revenue");
     document.getElementById("sumTotal").textContent = "$" + totalAll.toFixed(2) + (totalKeptChange > 0 ? " (+" + "$" + totalKeptChange.toFixed(2) + " kept)" : "");
-    document.getElementById("sumCashLabel").textContent = totalKeptChange > 0 ? "Cash Collected (Incl. Kept Change)" : "Cash Sales (Revenue)";
+    const sumTotalSubEl = document.getElementById("sumTotalSub");
+    if (sumTotalSubEl) {
+      if (totalEventsRev > 0) {
+        sumTotalSubEl.textContent = "Merch: $" + totalMerchRev.toFixed(2) + " • Events/Don: $" + totalEventsRev.toFixed(2);
+      } else {
+        sumTotalSubEl.textContent = "";
+      }
+    }
+    document.getElementById("sumCashLabel").textContent = totalKeptChange > 0 ? "Cash Collected (Incl. Kept Change)" : "Cash Sales & Donations";
     document.getElementById("sumCash").textContent = "$" + (totalCash + totalKeptChange).toFixed(2);
     document.getElementById("sumElec").textContent = "$" + totalElec.toFixed(2);
     document.getElementById("sumItemsCount").textContent = totalUnits.toString();
+    const sumEventsSubEl = document.getElementById("sumEventsCountSub");
+    if (sumEventsSubEl) {
+      sumEventsSubEl.textContent = totalEventsCount > 0 ? ("+" + totalEventsCount + " Donation/Event entr" + (totalEventsCount === 1 ? "y" : "ies")) : "";
+    }
     document.getElementById("showingCountLabel").textContent = periodDesc + " • Showing " + filteredSales.length + " of " + salesLog.length + " total orders";
     updateCashBoxUI();
 
@@ -3865,7 +4401,8 @@
         "<th>Seller</th>" +
         "<th>Method</th>" +
         "<th>Total ($)</th>" +
-        "<th>Total Qty</th>";
+        "<th>Merch Qty</th>" +
+        '<th style="background:#dcfce7; color:#166534; text-align:center;">Donations / Events ($)</th>';
       itemCols.forEach(function(colName) {
         headHTML += '<th style="background:#dbeafe; color:#1e3a8a; text-align:center;">' + colName + '</th>';
       });
@@ -3873,7 +4410,7 @@
       thead.innerHTML = headHTML;
 
       if (filteredSales.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="' + (7 + itemCols.length) + '" style="text-align:center; color:var(--muted);">No sales recorded for this filter.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="' + (8 + itemCols.length) + '" style="text-align:center; color:var(--muted);">No sales recorded for this filter.</td></tr>';
         return;
       }
 
@@ -3886,6 +4423,7 @@
         const isElec = e.paymentMethod && e.paymentMethod !== "Cash";
         const parsed = parseBuyerAndSeller(e);
         const dirClean = cleanDirectorateValue(e.directorate);
+        const customInfo = getOrderCustomEventsBreakdown(e);
         const tr = document.createElement("tr");
         let rowHTML =
           "<td>" + (e.timestamp || "") + "</td>" +
@@ -3894,7 +4432,10 @@
           "<td>" + (parsed.seller !== "—" ? '<span class="seller-badge">' + parsed.seller + '</span>' : "—") + "</td>" +
           '<td><span class="pm-badge ' + (isElec ? "electronic" : "") + '">' + (e.paymentMethod || "Cash") + "</span></td>" +
           '<td style="font-weight:800;">$' + (e.total || "0.00") + "</td>" +
-          '<td style="text-align:center; font-weight:800;">' + (e.totalQty || 0) + "</td>";
+          '<td style="text-align:center; font-weight:800;">' + (e.totalQty || 0) + "</td>" +
+          '<td style="text-align:center; font-weight:' + (customInfo.eventsRev > 0 ? "800" : "400") + '; color:' + (customInfo.eventsRev > 0 ? "#16a34a" : "#cbd5e1") + ';" title="' + (customInfo.events.map(function(x){return x.fullName;}).join(", ").replace(/"/g, "&quot;")) + '">' +
+            (customInfo.eventsRev > 0 ? ("$" + customInfo.eventsRev.toFixed(2)) : "$0.00") +
+          "</td>";
 
         itemCols.forEach(function(colName) {
           const q = (e.itemQuantities && e.itemQuantities[colName]) ? parseInt(e.itemQuantities[colName], 10) : 0;
@@ -3911,7 +4452,8 @@
       let totHTML =
         '<td colspan="5" style="text-align:right;">TOTALS ACROSS SHOWN ORDERS:</td>' +
         "<td>$" + totalAll.toFixed(2) + "</td>" +
-        '<td style="text-align:center;">' + totalUnits + "</td>";
+        '<td style="text-align:center;">' + totalUnits + "</td>" +
+        '<td style="text-align:center; color:#16a34a;">$' + totalEventsRev.toFixed(2) + "</td>";
       itemCols.forEach(function(colName) {
         totHTML += '<td style="text-align:center; color:var(--primary);">' + colTotals[colName] + "</td>";
       });
@@ -3926,7 +4468,7 @@
       "<th>Directorate</th>" +
       "<th>Seller</th>" +
       "<th>Qty</th>" +
-      "<th>Separated Item Breakdown</th>" +
+      "<th>Separated Item &amp; Event Breakdown</th>" +
       "<th>Method</th>" +
       "<th>Total</th>" +
       "<th>Paid / Change</th>" +
@@ -3947,7 +4489,23 @@
       let breakdownHTML = e.items || "";
       if (Array.isArray(e.lineItems) && e.lineItems.length > 0) {
         breakdownHTML = e.lineItems.map(function(li) {
+          if (isCustomOrEventItemName(li.itemName)) {
+            const parsedCust = parseCustomEventItemName(li.itemName);
+            return '<span class="event-badge-tag">' + parsedCust.category + '</span><strong>' + (li.qty > 1 ? li.qty + "x " : "") + parsedCust.title + "</strong> ($" + li.lineSubtotal + ")";
+          }
           return "<strong>" + li.qty + "x</strong> " + li.itemName + " ($" + li.lineSubtotal + ")";
+        }).join("<br>");
+      } else if (typeof e.items === "string" && e.items) {
+        breakdownHTML = e.items.split(";").map(function(part) {
+          const p = part.trim();
+          const m = p.match(/^(\d+)x\s+(.+?)\s*\(\$([0-9.]+)\)$/i);
+          if (m && isCustomOrEventItemName(m[2])) {
+            const q = parseInt(m[1], 10) || 1;
+            const parsedCust = parseCustomEventItemName(m[2]);
+            const sub = (parseFloat(m[3]) || 0) * q;
+            return '<span class="event-badge-tag">' + parsedCust.category + '</span><strong>' + (q > 1 ? q + "x " : "") + parsedCust.title + "</strong> ($" + sub.toFixed(2) + ")";
+          }
+          return p;
         }).join("<br>");
       }
 
@@ -3965,7 +4523,7 @@
           (getOrderKeptChangeAmount(e) > 0 ? '<br><span class="kept-change-badge">+Kept $' + getOrderKeptChangeAmount(e).toFixed(2) + '</span>' : '') +
         "</td>" +
         '<td style="white-space:nowrap;">' +
-          '<button type="button" class="btn-edit-order" onclick="editSaleRecord(\'' + (e.orderId || "") + '\')" title="Edit buyer name, directorate, payment method, or items (e.g. 2+ patch deal)">Edit</button>' +
+          '<button type="button" class="btn-edit-order" onclick="editSaleRecord(\'' + (e.orderId || "") + '\')" title="Edit buyer name, directorate, payment method, items, or donations/events">Edit</button>' +
           '<button type="button" class="btn-void" onclick="voidSaleRecord(\'' + (e.orderId || "") + '\')" title="Void order and restore stock">Void</button>' +
         '</td>';
       tbody.appendChild(tr);
@@ -3994,7 +4552,7 @@
     const periodLabel = getActiveFilterPeriodDescription();
     const fileSlug = getActiveFilterFilenameSlug();
 
-    let totalRev = 0, cashRev = 0, keptChangeRev = 0, elecRev = 0, totalUnits = 0;
+    let totalRev = 0, merchOnlyRev = 0, eventsOnlyRev = 0, eventsOnlyCount = 0, cashRev = 0, keptChangeRev = 0, elecRev = 0, totalUnits = 0;
     const methodTotals = { "Cash": 0, "Card": 0, "PayPal": 0, "Venmo/Digital": 0 };
     const itemPerf = {};
     allItemNames.forEach(function(name) {
@@ -4006,6 +4564,7 @@
         stock: invMatch ? (parseInt(invMatch.stock, 10) || 0) : "—"
       };
     });
+    const eventPerf = {};
     const sellerStats = {};
     const dirStats = {};
 
@@ -4014,8 +4573,14 @@
       const amt = parseFloat(s.total) || 0;
       const units = parseInt(s.totalQty, 10) || 0;
       const pm = s.paymentMethod || "Cash";
+      const customInfo = getOrderCustomEventsBreakdown(s);
+
       totalRev += amt;
+      eventsOnlyRev += customInfo.eventsRev;
+      eventsOnlyCount += customInfo.eventsQty;
+      merchOnlyRev += Math.max(0, amt - customInfo.eventsRev);
       totalUnits += units;
+
       if (pm === "Cash") {
         cashRev += amt;
         keptChangeRev += getOrderKeptChangeAmount(s);
@@ -4023,6 +4588,15 @@
         elecRev += amt;
       }
       methodTotals[pm] = (methodTotals[pm] || 0) + amt;
+
+      customInfo.events.forEach(function(ev) {
+        const k = ev.fullName;
+        if (!eventPerf[k]) {
+          eventPerf[k] = { category: ev.category, title: ev.title, qty: 0, rev: 0 };
+        }
+        eventPerf[k].qty += ev.qty;
+        eventPerf[k].rev += ev.subtotal;
+      });
 
       const parsed = parseBuyerAndSeller(s);
       const sellerKey = parsed.seller !== "—" ? parsed.seller : "Unassigned / Prior Sales";
@@ -4041,14 +4615,14 @@
       if (Array.isArray(s.lineItems) && s.lineItems.length > 0) {
         s.lineItems.forEach(function(li) {
           const k = li.itemName;
-          if (isSettingsItemName(k)) return;
+          if (isSettingsItemName(k) || isCustomOrEventItemName(k)) return;
           if (!itemPerf[k]) itemPerf[k] = { qty: 0, rev: 0, stdPrice: 0, stock: "—" };
           itemPerf[k].qty += parseInt(li.qty, 10) || 0;
           itemPerf[k].rev += parseFloat(li.lineSubtotal) || 0;
         });
       } else if (s.itemQuantities) {
         Object.keys(s.itemQuantities).forEach(function(k) {
-          if (isSettingsItemName(k)) return;
+          if (isSettingsItemName(k) || isCustomOrEventItemName(k)) return;
           const q = parseInt(s.itemQuantities[k], 10) || 0;
           if (q > 0) {
             if (!itemPerf[k]) itemPerf[k] = { qty: 0, rev: 0, stdPrice: 0, stock: "—" };
@@ -4065,21 +4639,24 @@
     csv += "SECTION 1: EXECUTIVE REVENUE & CASH BOX SUMMARY (" + csvEscape(periodLabel) + ")\n";
     csv += "Metric,Value\n";
     csv += "Reporting Period," + csvEscape(periodLabel) + "\n";
-    csv += "Period Merchandise Sales Revenue,$" + totalRev.toFixed(2) + "\n";
-    csv += "Period Refused Change / Donations Kept,$" + keptChangeRev.toFixed(2) + "\n";
-    csv += "Period Total Collected (Merchandise + Kept Change),$" + (totalRev + keptChangeRev).toFixed(2) + "\n";
-    csv += "Period Cash Sales (Merchandise Only),$" + cashRev.toFixed(2) + "\n";
-    csv += "Period Total Cash Collected (Cash Sales + Kept Change),$" + (cashRev + keptChangeRev).toFixed(2) + "\n";
-    csv += "Period Electronic Sales (All Digital),$" + elecRev.toFixed(2) + "\n";
-    csv += "  - Card Sales,$" + (methodTotals["Card"] || 0).toFixed(2) + "\n";
-    csv += "  - PayPal Sales,$" + (methodTotals["PayPal"] || 0).toFixed(2) + "\n";
-    csv += "  - Venmo/Digital Sales,$" + (methodTotals["Venmo/Digital"] || 0).toFixed(2) + "\n";
-    csv += "Period Units Sold," + totalUnits + "\n";
+    csv += "Period Merchandise Sales Revenue,$" + merchOnlyRev.toFixed(2) + "\n";
+    csv += "Period Donations & One-Time Events Revenue,$" + eventsOnlyRev.toFixed(2) + "\n";
+    csv += "Period Combined Order Revenue (Merch + Donations/Events),$" + totalRev.toFixed(2) + "\n";
+    csv += "Period Refused Change / Extra Donations Kept,$" + keptChangeRev.toFixed(2) + "\n";
+    csv += "Period Grand Total Collected (All Revenue + Kept Change),$" + (totalRev + keptChangeRev).toFixed(2) + "\n";
+    csv += "Period Cash Orders (Merch + Cash Donations/Events),$" + cashRev.toFixed(2) + "\n";
+    csv += "Period Total Physical Cash Collected (Incl. Kept Change),$" + (cashRev + keptChangeRev).toFixed(2) + "\n";
+    csv += "Period Electronic Orders (All Digital),$" + elecRev.toFixed(2) + "\n";
+    csv += "  - Card Orders,$" + (methodTotals["Card"] || 0).toFixed(2) + "\n";
+    csv += "  - PayPal Orders,$" + (methodTotals["PayPal"] || 0).toFixed(2) + "\n";
+    csv += "  - Venmo/Digital Orders,$" + (methodTotals["Venmo/Digital"] || 0).toFixed(2) + "\n";
+    csv += "Period Physical Merchandise Units Sold," + totalUnits + "\n";
+    csv += "Period Donation / Event Line Entries," + eventsOnlyCount + "\n";
     csv += "Period Completed Orders," + filteredSales.length + "\n";
     csv += "Current Physical Cash in Box (Live Balance),$" + getPhysicalCashInBox().toFixed(2) + "\n";
     csv += "Starting Change / Float Left in Box,$" + (parseFloat(cashBoxConfig.startingCash) || 0).toFixed(2) + "\n\n";
 
-    csv += "SECTION 2: ITEM-BY-ITEM SALES & REVENUE BREAKDOWN (" + csvEscape(periodLabel) + ")\n";
+    csv += "SECTION 2A: MERCHANDISE ITEM-BY-ITEM SALES & INVENTORY BREAKDOWN (" + csvEscape(periodLabel) + ")\n";
     csv += "Item Name,Standard Price ($),Units Sold in Period,Gross Revenue in Period ($),Avg Unit Price Charged ($),Current Stock Remaining,Remaining Stock Value ($)\n";
     let totalStockVal = 0;
     Object.keys(itemPerf).forEach(function(name) {
@@ -4098,7 +4675,25 @@
         typeof st.stock === "number" ? remVal.toFixed(2) : "—"
       ].join(",") + "\n";
     });
-    csv += "TOTALS,," + totalUnits + ",$" + totalRev.toFixed(2) + ",,,$" + totalStockVal.toFixed(2) + "\n\n";
+    csv += "MERCHANDISE TOTALS,," + totalUnits + ",$" + merchOnlyRev.toFixed(2) + ",,,$" + totalStockVal.toFixed(2) + "\n\n";
+
+    csv += "SECTION 2B: DONATIONS, FUNDRAISERS & ONE-TIME EVENTS BREAKDOWN (" + csvEscape(periodLabel) + ")\n";
+    csv += "Category,Event / Donation Description,Entries / Qty in Period,Total Raised in Period ($)\n";
+    const eventKeys = Object.keys(eventPerf);
+    if (eventKeys.length === 0) {
+      csv += "None,No donations or one-time events logged in this period,0,$0.00\n";
+    } else {
+      eventKeys.forEach(function(k) {
+        const ev = eventPerf[k];
+        csv += [
+          csvEscape(ev.category),
+          csvEscape(ev.title),
+          ev.qty,
+          ev.rev.toFixed(2)
+        ].join(",") + "\n";
+      });
+    }
+    csv += "DONATIONS & EVENTS TOTALS,," + eventsOnlyCount + ",$" + eventsOnlyRev.toFixed(2) + "\n\n";
 
     csv += "SECTION 3: CASH BOX & BANK DEPOSIT RECONCILIATION LOG\n";
     csv += "Date/Time,Action,Performed By,Cash Before ($),Taken to Bank ($),Change Left in Box ($),Notes\n";
@@ -4120,8 +4715,8 @@
       csv += "\n";
     }
 
-    csv += "SECTION 4: ORDER-BY-ORDER SALES MATRIX (" + csvEscape(periodLabel) + ")\n";
-    const headers = ["Order ID", "Date/Time", "Buyer Name", "Directorate", "Seller / Cashier", "Payment Method", "Item Total ($)", "Cash Paid ($)", "Change Given ($)", "Kept Change ($)", "Total Qty"]
+    csv += "SECTION 4: ORDER-BY-ORDER SALES & EVENTS MATRIX (" + csvEscape(periodLabel) + ")\n";
+    const headers = ["Order ID", "Date/Time", "Buyer Name", "Directorate", "Seller / Cashier", "Payment Method", "Order Total ($)", "Cash Paid ($)", "Change Given ($)", "Kept Change ($)", "Merch Qty", "Donations / Events ($)", "Event / Donation Details"]
       .concat(allItemNames.map(function(n) { return csvEscape("Qty: " + n); }));
     csv += headers.join(",") + "\n";
 
@@ -4131,6 +4726,10 @@
     filteredSales.forEach(function(r) {
       if (!r) return;
       const parsed = parseBuyerAndSeller(r);
+      const customInfo = getOrderCustomEventsBreakdown(r);
+      const eventDetailsStr = customInfo.events.map(function(ev) {
+        return (ev.qty > 1 ? ev.qty + "x " : "") + ev.fullName + " ($" + ev.subtotal.toFixed(2) + ")";
+      }).join("; ");
       const row = [
         csvEscape(r.orderId || ""),
         csvEscape(r.timestamp || ""),
@@ -4142,7 +4741,9 @@
         r.cashPaid || "0.00",
         r.change || "0.00",
         getOrderKeptChangeAmount(r).toFixed(2),
-        r.totalQty || 0
+        r.totalQty || 0,
+        customInfo.eventsRev.toFixed(2),
+        csvEscape(eventDetailsStr)
       ];
       allItemNames.forEach(function(itemName) {
         const q = (r.itemQuantities && r.itemQuantities[itemName]) ? parseInt(r.itemQuantities[itemName], 10) : 0;
@@ -4152,7 +4753,7 @@
       csv += row.join(",") + "\n";
     });
 
-    const totalsRow = ["", "", "", "", "", "PERIOD TOTALS", totalRev.toFixed(2), "", "", keptChangeRev.toFixed(2), totalUnits]
+    const totalsRow = ["", "", "", "", "", "PERIOD TOTALS", totalRev.toFixed(2), "", "", keptChangeRev.toFixed(2), totalUnits, eventsOnlyRev.toFixed(2), ""]
       .concat(allItemNames.map(function(n) { return colTotals[n]; }));
     csv += totalsRow.join(",") + "\n";
 
@@ -4165,18 +4766,23 @@
     let csv = "";
 
     if (logViewMode === "matrix") {
-      const headers = ["Order ID", "Date/Time", "Buyer Name", "Directorate", "Seller", "Payment Method", "Total ($)", "Total Qty"]
+      const headers = ["Order ID", "Date/Time", "Buyer Name", "Directorate", "Seller", "Payment Method", "Total ($)", "Merch Qty", "Donations / Events ($)", "Event / Donation Details"]
         .concat(allItemNames.map(function(n) { return csvEscape("Qty: " + n); }));
       csv += headers.join(",") + "\n";
       const colTotals = {};
       allItemNames.forEach(function(n) { colTotals[n] = 0; });
-      let sumRev = 0, sumQty = 0;
+      let sumRev = 0, sumQty = 0, sumEventsRev = 0;
 
       filteredSales.forEach(function(r) {
         if (!r) return;
         const parsed = parseBuyerAndSeller(r);
+        const customInfo = getOrderCustomEventsBreakdown(r);
+        const eventDetailsStr = customInfo.events.map(function(ev) {
+          return (ev.qty > 1 ? ev.qty + "x " : "") + ev.fullName + " ($" + ev.subtotal.toFixed(2) + ")";
+        }).join("; ");
         sumRev += parseFloat(r.total) || 0;
         sumQty += parseInt(r.totalQty, 10) || 0;
+        sumEventsRev += customInfo.eventsRev;
         const row = [
           csvEscape(r.orderId || ""),
           csvEscape(r.timestamp || ""),
@@ -4185,7 +4791,9 @@
           csvEscape(parsed.seller),
           csvEscape(r.paymentMethod || "Cash"),
           r.total || "0.00",
-          r.totalQty || 0
+          r.totalQty || 0,
+          customInfo.eventsRev.toFixed(2),
+          csvEscape(eventDetailsStr)
         ];
         allItemNames.forEach(function(itemName) {
           const q = (r.itemQuantities && r.itemQuantities[itemName]) ? parseInt(r.itemQuantities[itemName], 10) : 0;
@@ -4194,17 +4802,18 @@
         });
         csv += row.join(",") + "\n";
       });
-      const totRow = ["", "", "", "", "", "TOTALS", sumRev.toFixed(2), sumQty]
+      const totRow = ["", "", "", "", "", "TOTALS", sumRev.toFixed(2), sumQty, sumEventsRev.toFixed(2), ""]
         .concat(allItemNames.map(function(n) { return colTotals[n]; }));
       csv += totRow.join(",") + "\n";
       downloadFile("booster-sales-matrix-" + getActiveFilterFilenameSlug() + ".csv", csv, "text/csv");
       return;
     }
 
-    csv = "Order ID,Date/Time,Buyer Name,Directorate,Seller,Total Qty,Items Breakdown,Payment Method,Item Total ($),Cash Paid ($),Change Given ($),Kept Change ($)\n";
+    csv = "Order ID,Date/Time,Buyer Name,Directorate,Seller,Merch Qty,Donations/Events ($),Items & Events Breakdown,Payment Method,Order Total ($),Cash Paid ($),Change Given ($),Kept Change ($)\n";
     filteredSales.forEach(function(r) {
       if (!r) return;
       const parsed = parseBuyerAndSeller(r);
+      const customInfo = getOrderCustomEventsBreakdown(r);
       csv += [
         csvEscape(r.orderId || ""),
         csvEscape(r.timestamp || ""),
@@ -4212,6 +4821,7 @@
         csvEscape(cleanDirectorateValue(r.directorate)),
         csvEscape(parsed.seller),
         r.totalQty || 0,
+        customInfo.eventsRev.toFixed(2),
         csvEscape(r.items || ""),
         csvEscape(r.paymentMethod || "Cash"),
         r.total || "0.00",
@@ -4227,6 +4837,8 @@
     const clone = document.documentElement.cloneNode(true);
     const lockEl = clone.querySelector("#pinLockScreen");
     if (lockEl) lockEl.style.display = "flex";
+    const custEl = clone.querySelector("#customEventModal");
+    if (custEl) custEl.style.display = "none";
     const invEl = clone.querySelector("#invModal");
     if (invEl) invEl.style.display = "none";
     const logsEl = clone.querySelector("#logsModal");
@@ -4290,6 +4902,8 @@
   }
 
   try {
+    const custMod = document.getElementById("customEventModal");
+    if (custMod) custMod.style.display = "none";
     document.getElementById("invModal").style.display = "none";
     document.getElementById("logsModal").style.display = "none";
     syncSellersFromSalesLog();
