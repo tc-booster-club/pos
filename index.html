@@ -1698,8 +1698,8 @@
   if (!Array.isArray(offlineQueue)) offlineQueue = [];
 
   // ALWAYS prioritize DEFAULT_CLOUD_URL so every device connects to your active Google Sheet!
-  let cloudUrl = DEFAULT_CLOUD_URL || safeGetStorage("booster_cloud_url");
-  if (DEFAULT_CLOUD_URL) {
+  let cloudUrl = safeGetStorage("booster_cloud_url") || DEFAULT_CLOUD_URL;
+  if (DEFAULT_CLOUD_URL && !safeGetStorage("booster_cloud_url")) {
     safeSetStorage("booster_cloud_url", DEFAULT_CLOUD_URL);
   }
   let appPin = safeGetStorage("booster_app_pin") || DEFAULT_APP_PIN;
@@ -1715,6 +1715,11 @@
   }
   if (typeof baseStockMap["spinner coin"] !== "number") {
     baseStockMap["spinner coin"] = 100;
+  }
+  function getFormattedTimestamp() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   }
   let activeSeller = safeGetSession("booster_session_seller") || "";
   let enteredPin = "";
@@ -2777,7 +2782,7 @@
       cashBoxConfig.history = [];
     }
     cashBoxConfig.history.unshift({
-      timestamp: new Date().toLocaleString(),
+      timestamp: getFormattedTimestamp(),
       bySeller: activeSeller || "Booster Member",
       action: actionType,
       previousCash: Number(previousBox || 0).toFixed(2),
@@ -2785,8 +2790,8 @@
       leftInBox: Number(leftInBox || 0).toFixed(2),
       note: note || ""
     });
-    if (cashBoxConfig.history.length > 25) {
-      cashBoxConfig.history = cashBoxConfig.history.slice(0, 25);
+    if (cashBoxConfig.history.length > 10) {
+      cashBoxConfig.history = cashBoxConfig.history.slice(0, 10);
     }
   }
 
@@ -2823,7 +2828,7 @@
     cashBoxConfig = {
       startingCash: 0,
       baselineSalesCash: getAllTimeCashSalesTotal(),
-      lastUpdated: new Date().toLocaleString(),
+      lastUpdated: getFormattedTimestamp(),
       history: prevHistory
     };
     recordCashBoxAdjustment("Zero Out Cash Box", currentBox, currentBox, 0, "Emptied box to $0.00");
@@ -2852,7 +2857,7 @@
     cashBoxConfig = {
       startingCash: leftInBox,
       baselineSalesCash: getAllTimeCashSalesTotal(),
-      lastUpdated: new Date().toLocaleString(),
+      lastUpdated: getFormattedTimestamp(),
       history: prevHistory
     };
     recordCashBoxAdjustment("Bank Deposit", currentBox, takenToBank, leftInBox, "Deposited $" + takenToBank.toFixed(2) + ", left $" + leftInBox.toFixed(2) + " change");
@@ -2880,7 +2885,7 @@
     cashBoxConfig = {
       startingCash: exactVal,
       baselineSalesCash: getAllTimeCashSalesTotal(),
-      lastUpdated: new Date().toLocaleString(),
+      lastUpdated: getFormattedTimestamp(),
       history: prevHistory
     };
     recordCashBoxAdjustment("Set Exact Cash", currentBox, Math.max(0, currentBox - exactVal), exactVal, "Manually set cash box to $" + exactVal.toFixed(2));
@@ -3184,7 +3189,7 @@
     const uniqueSuffix = Date.now().toString().slice(-5) + "-" + Math.floor(100 + Math.random() * 900);
     const saleRecord = {
       orderId: "ORD-" + uniqueSuffix,
-      timestamp: wasEditing ? (wasEditing.timestamp || new Date().toLocaleString()) : new Date().toLocaleString(),
+      timestamp: wasEditing ? (wasEditing.timestamp || getFormattedTimestamp()) : getFormattedTimestamp(),
       buyerName: combinedBuyerName,
       sellerName: seller,
       directorate: directorate,
@@ -3292,9 +3297,9 @@
         };
       });
 
-    const cappedVoided = Array.isArray(voidedOrderIds) ? voidedOrderIds.slice(-300) : [];
+    const cappedVoided = Array.isArray(voidedOrderIds) ? voidedOrderIds.slice(-100) : [];
     const cappedCashBox = Object.assign({}, cashBoxConfig, {
-      history: Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history.slice(0, 20) : []
+      history: Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history.slice(0, 10) : []
     });
     const settingsObj = {
       sellers: sellersRoster,
@@ -3835,14 +3840,14 @@
             '</label>' +
           '</div>' +
         '</td>' +
-        '<td><input type="text" value="' + item.name.replace(/"/g, "&quot;") + '" oninput="updateItem(' + index + ', \'name\', this.value)"></td>' +
-        '<td><input type="number" step="0.50" value="' + item.price + '" oninput="updateItem(' + index + ', \'price\', this.value)"></td>' +
+        '<td><input type="text" value="' + item.name.replace(/"/g, "&quot;") + '" onchange="updateItem(' + index + ', \'name\', this.value)"></td>' +
+        '<td><input type="number" step="0.50" value="' + item.price + '" onchange="updateItem(' + index + ', \'price\', this.value)"></td>' +
         '<td style="text-align:center;">' +
           '<input type="checkbox" ' + (item.isPatchDeal ? "checked" : "") + ' onchange="updateItem(' + index + ', \'isPatchDeal\', this.checked)" style="width:18px;height:18px;cursor:pointer;">' +
         '</td>' +
         '<td>' +
           '<div class="stock-cell-wrap">' +
-            '<input type="number" value="' + ((!cloudStockLoadedThisSession && Boolean(cloudUrl)) ? "" : item.stock) + '" placeholder="Syncing..." oninput="updateItem(' + index + ', \'stock\', this.value)">' +
+            '<input type="number" value="' + ((!cloudStockLoadedThisSession && Boolean(cloudUrl)) ? "" : item.stock) + '" placeholder="Syncing..." onchange="updateItem(' + index + ', \'stock\', this.value)">' +
             '<button type="button" class="btn-restock" onclick="promptRestockItem(' + index + ')" title="Add new stock">+Add</button>' +
           '</div>' +
         '</td>' +
@@ -3940,7 +3945,7 @@
   function parseSaleTimestampToDate(timestampStr) {
     if (!timestampStr) return null;
     const raw = String(timestampStr).trim();
-    const d = new Date(raw);
+    const d = new Date(raw.indexOf(" ") !== -1 && raw.indexOf("-") !== -1 ? raw.replace(" ", "T") : raw);
     if (!isNaN(d.getTime())) return d;
     const m = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
     if (m) {
@@ -4634,7 +4639,7 @@
     });
 
     let csv = "BOOSTER CLUB POS - MASTER TREASURER & INVENTORY REPORT\n";
-    csv += "Generated," + csvEscape(new Date().toLocaleString()) + ",Reporting Period," + csvEscape(periodLabel) + "\n\n";
+    csv += "Generated," + csvEscape(getFormattedTimestamp()) + ",Reporting Period," + csvEscape(periodLabel) + "\n\n";
 
     csv += "SECTION 1: EXECUTIVE REVENUE & CASH BOX SUMMARY (" + csvEscape(periodLabel) + ")\n";
     csv += "Metric,Value\n";
