@@ -23,6 +23,8 @@
     * {
       box-sizing: border-box;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    button {
       touch-action: manipulation;
     }
     input, textarea, select {
@@ -1562,7 +1564,7 @@
         <h3 style="color:#5b21b6;">&#128179; Zeffy Kiosk &amp; Phone QR Checkout Form URL</h3>
         <p>Paste your club's 100%-free Zeffy payment/ticketing/donation form link once below. It automatically syncs via Cloudflare D1 to every register tablet and generates an offline NIPR-safe QR code at checkout!</p>
         <div class="cloud-url-row" style="margin-top:6px;">
-          <input type="text" id="invZeffyUrlInput" autocomplete="off" spellcheck="false" placeholder="https://www.zeffy.com/en-US/..." style="border-color:#c4b5fd; background:white;" onclick="this.focus();" onkeydown="if(event.key==='Enter'){event.preventDefault();saveZeffyUrlSetting('invZeffyUrlInput');}">
+          <input type="text" id="invZeffyUrlInput" value="https://www.zeffy.com/en-US/donation-form/transcom-booster-club-payment" autocomplete="off" spellcheck="false" placeholder="https://www.zeffy.com/en-US/..." style="border-color:#c4b5fd; background:white;" onclick="this.focus();" onkeydown="if(event.key==='Enter'){event.preventDefault();saveZeffyUrlSetting('invZeffyUrlInput');}">
           <button type="button" class="btn-photo" style="background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd; padding:8px 10px;" onclick="pasteIntoInputById('invZeffyUrlInput')">&#128203; Paste</button>
           <button type="button" class="btn-add" style="background:#6d28d9;" onclick="saveZeffyUrlSetting('invZeffyUrlInput')">Save Zeffy URL to D1</button>
         </div>
@@ -1622,7 +1624,7 @@
         <div style="border-top:1px solid #bfdbfe; padding-top:8px; margin-top:8px;">
           <span style="font-size:0.78rem; font-weight:700; color:#5b21b6; display:block; margin-bottom:4px;">&#128179; Zeffy Kiosk &amp; Phone QR Form URL (Synced to all devices via D1)</span>
           <div class="cloud-url-row">
-            <input type="text" id="logsZeffyUrlInput" autocomplete="off" spellcheck="false" placeholder="https://www.zeffy.com/en-US/..." onclick="this.focus();" onkeydown="if(event.key==='Enter'){event.preventDefault();saveZeffyUrlSetting('logsZeffyUrlInput');}">
+            <input type="text" id="logsZeffyUrlInput" value="https://www.zeffy.com/en-US/donation-form/transcom-booster-club-payment" autocomplete="off" spellcheck="false" placeholder="https://www.zeffy.com/en-US/..." onclick="this.focus();" onkeydown="if(event.key==='Enter'){event.preventDefault();saveZeffyUrlSetting('logsZeffyUrlInput');}">
             <button type="button" class="btn-photo" style="background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd; padding:8px 10px;" onclick="pasteIntoInputById('logsZeffyUrlInput')">&#128203; Paste</button>
             <button type="button" class="btn-action" style="background:#6d28d9;" onclick="saveZeffyUrlSetting('logsZeffyUrlInput')">Save Zeffy URL</button>
           </div>
@@ -1747,6 +1749,18 @@
   </div>
 </div>
 
+<!-- NIPR-SAFE IN-PAGE NOTICE & CONFIRMATION MODAL (Replaces DISA-freezing window.alert & window.confirm) -->
+<div class="nipr-modal-backdrop" id="niprDialogModal" style="z-index: 1250;">
+  <div class="nipr-prompt-card" style="max-width: 480px;" onclick="event.stopPropagation()">
+    <h3 id="niprDialogTitle">Booster Club POS</h3>
+    <p class="nipr-prompt-msg" id="niprDialogMessage" style="max-height: 55vh; overflow-y: auto;"></p>
+    <div class="nipr-prompt-actions">
+      <button type="button" class="btn-header" style="background:#e2e8f0; color:var(--text); display:none;" id="niprDialogCancelBtn" onclick="closeNiprDialogModal(false)">Cancel</button>
+      <button type="button" class="btn-add" id="niprDialogOkBtn" onclick="closeNiprDialogModal(true)">OK</button>
+    </div>
+  </div>
+</div>
+
 <!-- ZEFFY TABLET KIOSK & NIPR PHONE QR CHECKOUT MODAL -->
 <div class="nipr-modal-backdrop" id="zeffyKioskModal" style="z-index: 1100;">
   <div class="zeffy-kiosk-modal" onclick="event.stopPropagation()">
@@ -1778,7 +1792,7 @@
           <h3 style="margin:0 0 8px 0; color:#5b21b6;">No Zeffy Form URL Configured Yet</h3>
           <p style="font-size:0.84rem; color:var(--muted); margin:0 0 12px 0;">Paste your Booster Club's Zeffy ticketing or payment link once below to enable the embedded kiosk &amp; scannable QR code on all devices:</p>
           <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            <input type="text" id="kioskQuickZeffyUrlInput" autocomplete="off" spellcheck="false" placeholder="https://www.zeffy.com/en-US/..." onclick="this.focus();" style="flex:1; min-width:190px; padding:9px 10px; border:2px solid #c4b5fd; border-radius:6px; font-size:0.85rem;" onkeydown="if(event.key==='Enter'){event.preventDefault();saveZeffyUrlSetting('kioskQuickZeffyUrlInput');}">
+            <input type="text" id="kioskQuickZeffyUrlInput" value="https://www.zeffy.com/en-US/donation-form/transcom-booster-club-payment" autocomplete="off" spellcheck="false" placeholder="https://www.zeffy.com/en-US/..." onclick="this.focus();" style="flex:1; min-width:190px; padding:9px 10px; border:2px solid #c4b5fd; border-radius:6px; font-size:0.85rem;" onkeydown="if(event.key==='Enter'){event.preventDefault();saveZeffyUrlSetting('kioskQuickZeffyUrlInput');}">
             <button type="button" class="btn-photo" style="background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd; padding:8px 10px;" onclick="pasteIntoInputById('kioskQuickZeffyUrlInput')">&#128203; Paste</button>
             <button type="button" class="btn-add" style="background:#6d28d9;" onclick="saveZeffyUrlSetting('kioskQuickZeffyUrlInput')">Save URL</button>
           </div>
@@ -2037,7 +2051,55 @@
   let cloudUrl = D1_API_URL;
   let lastCloudUpdated = safeGetStorage("booster_d1_last_updated") || "";
   let verifiedAdminPin = safeGetSession("booster_verified_admin_pin") || "";
-  let zeffyUrl = safeGetStorage("booster_zeffy_url") || "";
+  const DEFAULT_ZEFFY_URL = "https://www.zeffy.com/en-US/donation-form/transcom-booster-club-payment";
+  let zeffyUrl = (safeGetStorage("booster_zeffy_url") || "").trim() || DEFAULT_ZEFFY_URL;
+
+  let activeNiprDialogConfirmCb = null;
+  let activeNiprDialogCancelCb = null;
+
+  function showNiprNotice(message, title, onOk) {
+    const backdrop = document.getElementById("niprDialogModal");
+    const titleEl = document.getElementById("niprDialogTitle");
+    const msgEl = document.getElementById("niprDialogMessage");
+    const cancelBtn = document.getElementById("niprDialogCancelBtn");
+    const okBtn = document.getElementById("niprDialogOkBtn");
+    if (!backdrop || !msgEl) return;
+    if (titleEl) titleEl.textContent = title || "Booster Club POS";
+    msgEl.textContent = String(message || "");
+    if (cancelBtn) cancelBtn.style.display = "none";
+    if (okBtn) okBtn.textContent = "OK";
+    activeNiprDialogConfirmCb = typeof onOk === "function" ? onOk : null;
+    activeNiprDialogCancelCb = null;
+    backdrop.style.display = "flex";
+    setTimeout(function() { try { if (okBtn) okBtn.focus(); } catch (e) {} }, 40);
+  }
+
+  function showNiprConfirm(title, message, confirmLabel, onConfirm, onCancel) {
+    const backdrop = document.getElementById("niprDialogModal");
+    const titleEl = document.getElementById("niprDialogTitle");
+    const msgEl = document.getElementById("niprDialogMessage");
+    const cancelBtn = document.getElementById("niprDialogCancelBtn");
+    const okBtn = document.getElementById("niprDialogOkBtn");
+    if (!backdrop || !msgEl) return;
+    if (titleEl) titleEl.textContent = title || "Confirm Action";
+    msgEl.textContent = String(message || "");
+    if (cancelBtn) cancelBtn.style.display = "inline-block";
+    if (okBtn) okBtn.textContent = confirmLabel || "OK";
+    activeNiprDialogConfirmCb = typeof onConfirm === "function" ? onConfirm : null;
+    activeNiprDialogCancelCb = typeof onCancel === "function" ? onCancel : null;
+    backdrop.style.display = "flex";
+  }
+
+  function closeNiprDialogModal(confirmed) {
+    const backdrop = document.getElementById("niprDialogModal");
+    if (backdrop) backdrop.style.display = "none";
+    const okCb = activeNiprDialogConfirmCb;
+    const cancelCb = activeNiprDialogCancelCb;
+    activeNiprDialogConfirmCb = null;
+    activeNiprDialogCancelCb = null;
+    if (confirmed && typeof okCb === "function") okCb();
+    else if (!confirmed && typeof cancelCb === "function") cancelCb();
+  }
 
   // ============================================================================
   // NIPR-SAFE IN-PAGE HTML INPUT MODAL (Replaces frozen native dialog popups)
@@ -2615,7 +2677,7 @@
     const amt = parseFloat(document.getElementById("customEventAmount").value);
     const qty = Math.max(1, parseInt(document.getElementById("customEventQty").value, 10) || 1);
     if (isNaN(amt) || amt <= 0) {
-      alert("Please enter a valid dollar amount greater than $0.00.");
+      showNiprNotice("Please enter a valid dollar amount greater than $0.00.");
       return;
     }
     const cleanTitle = rawTitle || (selectedCustomEventCat === "Donation" ? "General Booster Donation" : selectedCustomEventCat);
@@ -2838,15 +2900,21 @@
     const target = sellersRoster[index];
     if (!target) return;
     if (sellersRoster.length <= 1) {
-      alert("You must keep at least 1 seller name in the roster.");
+      showNiprNotice("You must keep at least 1 seller name in the roster.", "Seller Roster");
       return;
     }
     ensureAdminPinVerified(function() {
-      if (!confirm("Remove '" + target + "' from the Seller Roster buttons?")) return;
-      sellersRoster.splice(index, 1);
-      safeSetStorage("booster_sellers_roster", JSON.stringify(sellersRoster));
-      updateSellerUI();
-      pushSettingsToCloud(true);
+      showNiprConfirm(
+        "Remove Seller from Roster?",
+        "Remove '" + target + "' from the Seller Roster buttons?",
+        "Remove Seller",
+        function() {
+          sellersRoster.splice(index, 1);
+          safeSetStorage("booster_sellers_roster", JSON.stringify(sellersRoster));
+          updateSellerUI();
+          pushSettingsToCloud(true);
+        }
+      );
     });
   }
 
@@ -2978,15 +3046,15 @@
   }
 
   function changeBoosterPin() {
-    const lockNow = confirm(
-      "ENCRYPTED ADMIN_PIN SECURITY\n\n" +
-      "Your Admin PIN / Password is now stored as an encrypted server secret (ADMIN_PIN) inside Cloudflare Pages -> Settings -> Variables and Secrets, so it never appears in your HTML code.\n\n" +
-      "Would you like to lock this browser session right now so the Admin PIN must be re-entered?"
+    showNiprConfirm(
+      "Encrypted ADMIN_PIN Security",
+      "Your Admin PIN / Password is stored as an encrypted server secret (ADMIN_PIN) inside Cloudflare Pages -> Settings -> Variables and Secrets, so it never appears in your HTML code.\n\nWould you like to lock this browser session right now so the Admin PIN must be re-entered?",
+      "Lock Register Now",
+      function() {
+        closeInventoryModal();
+        requirePinLockNow();
+      }
     );
-    if (lockNow) {
-      closeInventoryModal();
-      requirePinLockNow();
-    }
   }
 
   function isSameLocalDate(timestampStr, targetDateObj) {
@@ -3649,20 +3717,24 @@
   function zeroOutCashBox() {
     ensureAdminPinVerified(function() {
       const currentBox = getPhysicalCashInBox();
-      if (!confirm("ZERO OUT CASH BOX?\n\nCurrent Physical Cash in Box: $" + currentBox.toFixed(2) + "\n\nClicking OK will reset the physical cash box counter to $0.00 (for example, after taking all cash to the bank). Your historical sales logs and revenue reports will NOT be deleted.")) {
-        return;
-      }
-      const prevHistory = Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history : [];
-      cashBoxConfig = {
-        startingCash: 0,
-        baselineSalesCash: getAllTimeCashSalesTotal(),
-        lastUpdated: getFormattedTimestamp(),
-        history: prevHistory
-      };
-      recordCashBoxAdjustment("Zero Out Cash Box", currentBox, currentBox, 0, "Emptied box to $0.00");
-      saveState();
-      updateCashBoxUI();
-      pushSettingsToCloud(true);
+      showNiprConfirm(
+        "Zero Out Cash Box ($0.00)?",
+        "Current Physical Cash in Box: $" + currentBox.toFixed(2) + "\n\nClicking Zero Out will reset the physical cash box counter to $0.00 (for example, after taking all cash to the bank). Your historical sales logs and revenue reports will NOT be deleted.",
+        "Zero Out ($0.00)",
+        function() {
+          const prevHistory = Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history : [];
+          cashBoxConfig = {
+            startingCash: 0,
+            baselineSalesCash: getAllTimeCashSalesTotal(),
+            lastUpdated: getFormattedTimestamp(),
+            history: prevHistory
+          };
+          recordCashBoxAdjustment("Zero Out Cash Box", currentBox, currentBox, 0, "Emptied box to $0.00");
+          saveState();
+          updateCashBoxUI();
+          pushSettingsToCloud(true);
+        }
+      );
     });
   }
 
@@ -3695,7 +3767,7 @@
           saveState();
           updateCashBoxUI();
           pushSettingsToCloud(true);
-          alert("Cash Box Updated!\n\n• Taken to Bank: $" + takenToBank.toFixed(2) + "\n• Change Left in Box: $" + leftInBox.toFixed(2));
+          showNiprNotice("Cash Box Updated!\n\n• Taken to Bank: $" + takenToBank.toFixed(2) + "\n• Change Left in Box: $" + leftInBox.toFixed(2));
         }
       });
     });
@@ -3737,7 +3809,7 @@
   function viewCashBoxHistoryModal() {
     const hist = Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history : [];
     if (hist.length === 0) {
-      alert("No bank deposits or cash box adjustments have been logged yet.");
+      showNiprNotice("No bank deposits or cash box adjustments have been logged yet.");
       return;
     }
     const lines = hist.slice(0, 12).map(function(h, i) {
@@ -3746,7 +3818,7 @@
         " — Taken to Bank: $" + (h.takenToBank || "0.00") +
         " | Left in Box: $" + (h.leftInBox || "0.00");
     });
-    alert("RECENT CASH BOX & BANK DEPOSIT LOG (Also included in Master Treasurer CSV):\n\n" + lines.join("\n"));
+    showNiprNotice("RECENT CASH BOX & BANK DEPOSIT LOG (Also included in Master Treasurer CSV):\n\n" + lines.join("\n"));
   }
 
   function restoreSaleStockToInventory(sale) {
@@ -3827,19 +3899,28 @@
 
   function editSaleRecordVerified(orderId) {
     if (editingSaleBackup) {
-      alert("You are already editing an order in the register. Please complete or cancel that edit first.");
+      showNiprNotice("You are already editing an order in the register. Please complete or cancel that edit first.", "Already Editing Order");
       return;
     }
     const idx = salesLog.findIndex(function(s) { return s && String(s.orderId) === String(orderId); });
     if (idx === -1) return;
+    if (Object.keys(cart).length > 0 || customCartItems.length > 0) {
+      showNiprConfirm(
+        "Replace Current Cart?",
+        "Your current register cart has items in it. Replace the cart with this past order to edit it?",
+        "Replace Cart & Edit",
+        function() { loadSaleIntoCartForEdit(orderId); }
+      );
+      return;
+    }
+    loadSaleIntoCartForEdit(orderId);
+  }
+
+  function loadSaleIntoCartForEdit(orderId) {
+    const idx = salesLog.findIndex(function(s) { return s && String(s.orderId) === String(orderId); });
+    if (idx === -1) return;
     const sale = salesLog[idx];
     const parsed = parseBuyerAndSeller(sale);
-
-    if (Object.keys(cart).length > 0 || customCartItems.length > 0) {
-      if (!confirm("Your current register cart has items in it. Replace the cart with this past order to edit it?")) {
-        return;
-      }
-    }
 
     editingSaleBackup = {
       sale: JSON.parse(JSON.stringify(sale)),
@@ -4038,10 +4119,10 @@
           try { el.focus(); } catch (e) {}
         }
       }).catch(function() {
-        alert("DISA Browser Tip: Click inside the text box and press Ctrl + V on your keyboard to paste.");
+        showNiprNotice("DISA Browser Tip: Click inside the text box and press Ctrl + V on your keyboard to paste.");
       });
     } else {
-      alert("DISA Browser Tip: Click inside the text box and press Ctrl + V on your keyboard to paste.");
+      showNiprNotice("DISA Browser Tip: Click inside the text box and press Ctrl + V on your keyboard to paste.");
     }
   }
 
@@ -4058,7 +4139,7 @@
     const inp = document.getElementById(inputElementId);
     const cleaned = normalizeZeffyUrl(inp ? inp.value : "");
     if (cleaned && !/^https:\/\//i.test(cleaned)) {
-      alert("Please enter a valid https:// Zeffy URL.");
+      showNiprNotice("Please enter a valid https:// Zeffy URL.");
       return;
     }
     ensureAdminPinVerified(function() {
@@ -4332,39 +4413,42 @@
       const sale = salesLog[idx];
       const parsed = parseBuyerAndSeller(sale);
 
-      const confirmMsg = "VOID / REFUND ORDER?\n\n" +
+      const confirmMsg =
         "Buyer: " + parsed.buyer + " (" + (sale.directorate || "—") + ")\n" +
         "Total: $" + (sale.total || "0.00") + " (" + (sale.items || "") + ")\n\n" +
-        "Clicking OK will:\n" +
+        "Clicking Void Order will:\n" +
         "1. Add the sold items back into your Cloudflare D1 Inventory stock counts.\n" +
         "2. Mark this order as voided in Cloudflare D1 across all devices.";
-      if (!confirm(confirmMsg)) return;
+      showNiprConfirm("Void / Refund Order?", confirmMsg, "Void Order", function() {
+        const curIdx = salesLog.findIndex(function(s) { return s && String(s.orderId) === String(orderId); });
+        if (curIdx === -1) return;
+        const targetSale = salesLog[curIdx];
+        const restockList = extractSaleStockItems(targetSale);
+        restoreSaleStockToInventory(targetSale);
 
-      const restockList = extractSaleStockItems(sale);
-      restoreSaleStockToInventory(sale);
-
-      if (sale.orderId && voidedOrderIds.indexOf(String(sale.orderId)) === -1) {
-        voidedOrderIds.push(String(sale.orderId));
-      }
-      salesLog.splice(idx, 1);
-      saveState();
-      renderGrid();
-      renderCart();
-      if (isInventoryModalOpen()) renderInventoryTable();
-      if (isLogsModalOpen()) renderSalesLogTable();
-
-      postToD1Api({
-        action: "voidOrder",
-        orderId: String(sale.orderId || ""),
-        restock: restockList
-      }, true).then(function(res) {
-        if (res && res.lastUpdated) {
-          lastCloudUpdated = String(res.lastUpdated);
-          safeSetStorage("booster_d1_last_updated", lastCloudUpdated);
+        if (targetSale.orderId && voidedOrderIds.indexOf(String(targetSale.orderId)) === -1) {
+          voidedOrderIds.push(String(targetSale.orderId));
         }
-        updateCloudBadge();
-      }).catch(function() {
-        setSyncIndicator("Offline (Void Local)", "offline");
+        salesLog.splice(curIdx, 1);
+        saveState();
+        renderGrid();
+        renderCart();
+        if (isInventoryModalOpen()) renderInventoryTable();
+        if (isLogsModalOpen()) renderSalesLogTable();
+
+        postToD1Api({
+          action: "voidOrder",
+          orderId: String(targetSale.orderId || ""),
+          restock: restockList
+        }, true).then(function(res) {
+          if (res && res.lastUpdated) {
+            lastCloudUpdated = String(res.lastUpdated);
+            safeSetStorage("booster_d1_last_updated", lastCloudUpdated);
+          }
+          updateCloudBadge();
+        }).catch(function() {
+          setSyncIndicator("Offline (Void Local)", "offline");
+        });
       });
     });
   }
@@ -4414,7 +4498,7 @@
       updateCloudBadge();
     }).catch(function(err) {
       isSyncing = false;
-      alert("Order updated locally, but D1 sync reported: " + err.message);
+      showNiprNotice("Order updated locally, but D1 sync reported: " + err.message);
       updateCloudBadge();
     });
   }
@@ -4453,7 +4537,7 @@
     pruneVoidedFromOfflineQueue();
     if (offlineQueue.length === 0) {
       updateCloudBadge();
-      if (!silent) alert("No pending offline sales to sync.");
+      if (!silent) showNiprNotice("No pending offline sales to sync.");
       return;
     }
     isSyncing = true;
@@ -4487,7 +4571,7 @@
         safeSetStorage("booster_d1_last_updated", lastCloudUpdated);
       }
       saveState();
-      if (!silent) alert("Queued sales synced to Cloudflare D1!");
+      if (!silent) showNiprNotice("Queued sales synced to Cloudflare D1!");
     }).catch(function() {
       isSyncing = false;
       updateCloudBadge();
@@ -4524,9 +4608,9 @@
           safeSetStorage("booster_d1_last_updated", lastCloudUpdated);
         }
         updateCloudBadge();
-        if (!silent) alert("Settings saved to Cloudflare D1!");
+        if (!silent) showNiprNotice("Settings saved to Cloudflare D1!");
       }).catch(function(err) {
-        if (!silent) alert("Could not save settings to D1: " + err.message);
+        if (!silent) showNiprNotice("Could not save settings to D1: " + err.message);
       });
     };
     if (verifiedAdminPin) {
@@ -4555,11 +4639,11 @@
         updateCloudBadge();
         renderGrid();
         if (isInventoryModalOpen()) renderInventoryTable();
-        if (!silent) alert("Success! Inventory, prices, stock, and photos saved to Cloudflare D1.");
+        if (!silent) showNiprNotice("Success! Inventory, prices, stock, and photos saved to Cloudflare D1.");
       }).catch(function(err) {
         isSyncing = false;
         setSyncIndicator("Offline (Saved Locally)", "offline");
-        if (!silent) alert("Failed to push inventory to D1: " + err.message);
+        if (!silent) showNiprNotice("Failed to push inventory to D1: " + err.message);
       });
     };
 
@@ -4656,7 +4740,7 @@
               history: Array.isArray(data.settings.cashBox.history) ? data.settings.cashBox.history : []
             };
           }
-          if (typeof data.settings.zeffyUrl === "string") {
+          if (typeof data.settings.zeffyUrl === "string" && data.settings.zeffyUrl.trim()) {
             zeffyUrl = data.settings.zeffyUrl.trim();
             safeSetStorage("booster_zeffy_url", zeffyUrl);
             syncZeffyUrlInputsUI();
@@ -4702,9 +4786,9 @@
 
         if (!silent) {
           if (dbIsUninitialized) {
-            alert("Connected to Cloudflare D1! Your D1 database is currently empty — open Cloud Settings (or Inventory & Sellers) and click 'Migrate All Data to Cloudflare D1' to import your past sales and stock.");
+            showNiprNotice("Connected to Cloudflare D1! Your D1 database is currently empty — open Cloud Settings (or Inventory & Sellers) and click 'Migrate All Data to Cloudflare D1' to import your past sales and stock.");
           } else {
-            alert("Synced with Cloudflare D1! Loaded " + inventory.length + " items and " + salesLog.length + " orders.");
+            showNiprNotice("Synced with Cloudflare D1! Loaded " + inventory.length + " items and " + salesLog.length + " orders.");
           }
         }
         updateCloudBadge();
@@ -4822,53 +4906,59 @@
           ? ("Pulled live from Google Sheets + Local Cache")
           : ("Using Local Browser Cache (Google Sheets URL was unreachable or blocked on this network)");
 
-        if (!confirm(
-          "READY TO MIGRATE TO CLOUDFLARE D1\n\n" +
+        showNiprConfirm(
+          "Ready to Migrate to Cloudflare D1",
           "Source: " + sheetNote + "\n" +
           "• Inventory Items: " + d1InvPayload.length + " (with photos & stock)\n" +
           "• Sales Orders: " + mergedChronologicalSales.length + "\n" +
           "• Sellers in Roster: " + migSellers.length + "\n\n" +
-          "Click OK to import everything into Cloudflare D1 now."
-        )) {
-          isSyncing = false;
-          updateCloudBadge();
-          return;
-        }
-
-        return postToD1Api({
-          action: "migrateFromLegacy",
-          inventory: d1InvPayload,
-          sales: mergedChronologicalSales,
-          voidedOrderIds: migVoided,
-          settings: {
-            sellers: migSellers,
-            cashBox: migCashBox,
-            baseStocks: migBaseStocks,
-            zeffyUrl: zeffyUrl || ""
+          "Click Import Now to copy everything into Cloudflare D1.",
+          "Import Now",
+          function() {
+            postToD1Api({
+              action: "migrateFromLegacy",
+              inventory: d1InvPayload,
+              sales: mergedChronologicalSales,
+              voidedOrderIds: migVoided,
+              settings: {
+                sellers: migSellers,
+                cashBox: migCashBox,
+                baseStocks: migBaseStocks,
+                zeffyUrl: zeffyUrl || ""
+              }
+            }, true).then(function(res) {
+              isSyncing = false;
+              lastCloudUpdated = "";
+              safeRemoveStorage("booster_d1_last_updated");
+              showNiprNotice(
+                "• Imported Inventory Items: " + (res.migratedInventory || d1InvPayload.length) + "\n" +
+                "• Imported Sales Orders: " + (res.migratedSales || mergedChronologicalSales.length) + "\n\n" +
+                "Your POS is now running 100% on Cloudflare D1!",
+                "Migration Complete!"
+              );
+              pullInventoryFromCloud(true);
+            }).catch(function(err) {
+              isSyncing = false;
+              updateCloudBadge();
+              showNiprNotice("Migration error: " + err.message, "Migration Error");
+            });
+          },
+          function() {
+            isSyncing = false;
+            updateCloudBadge();
           }
-        }, true).then(function(res) {
-          isSyncing = false;
-          lastCloudUpdated = "";
-          safeRemoveStorage("booster_d1_last_updated");
-          alert(
-            "Migration Complete!\n\n" +
-            "• Imported Inventory Items: " + (res.migratedInventory || d1InvPayload.length) + "\n" +
-            "• Imported Sales Orders: " + (res.migratedSales || mergedChronologicalSales.length) + "\n\n" +
-            "Your POS is now running 100% on Cloudflare D1!"
-          );
-          pullInventoryFromCloud(true);
-        });
+        );
       }).catch(function(err) {
         isSyncing = false;
         updateCloudBadge();
-        alert("Migration error: " + err.message);
+        showNiprNotice("Migration error: " + err.message);
       });
     });
   }
 
   function recalculateStockFromSalesLog() {
     if (!salesLog || salesLog.length === 0) {
-      alert("Your Sales Log is currently empty, so there are no logged sales to subtract.");
+      showNiprNotice("Your Sales Log is currently empty, so there are no logged sales to subtract.");
       return;
     }
 
@@ -4884,7 +4974,7 @@
     });
 
     if (summaryLines.length === 0) {
-      alert("No matching sold items were found in the Sales Log to subtract.");
+      showNiprNotice("No matching sold items were found in the Sales Log to subtract.");
       return;
     }
 
@@ -4892,23 +4982,23 @@
       summaryLines.join("\n") +
       "\n\nClick OK to subtract these sold items from your current stock numbers and update the cloud.";
 
-    if (!confirm(msg)) return;
+    showNiprConfirm("Recalculate Stock?", msg, "Update Stock", function() {
+      inventory.forEach(function(item) {
+        const key = String(item.name || "").trim().toLowerCase();
+        const soldQty = soldMap[key] || 0;
+        if (soldQty > 0) {
+          item.stock = Math.max(0, (parseInt(item.stock, 10) || 0) - soldQty);
+          recordExplicitStockSet(item.name, item.stock);
+        }
+      });
 
-    inventory.forEach(function(item) {
-      const key = String(item.name || "").trim().toLowerCase();
-      const soldQty = soldMap[key] || 0;
-      if (soldQty > 0) {
-        item.stock = Math.max(0, (parseInt(item.stock, 10) || 0) - soldQty);
-        recordExplicitStockSet(item.name, item.stock);
-      }
+      inventoryDirty = true;
+      saveState();
+      renderInventoryTable();
+      renderGrid();
+      renderCart();
+      pushInventoryToCloud(false);
     });
-
-    inventoryDirty = true;
-    saveState();
-    renderInventoryTable();
-    renderGrid();
-    renderCart();
-    pushInventoryToCloud(false);
   }
 
   function openInventoryModal() {
@@ -6055,6 +6145,8 @@
     if (logsEl) logsEl.style.display = "none";
     const niprEl = clone.querySelector("#niprInputModal");
     if (niprEl) niprEl.style.display = "none";
+    const niprDlgEl = clone.querySelector("#niprDialogModal");
+    if (niprDlgEl) niprDlgEl.style.display = "none";
     const zefEl = clone.querySelector("#zeffyKioskModal");
     if (zefEl) zefEl.style.display = "none";
     const zefIframe = clone.querySelector("#zeffyKioskIframe");
@@ -6085,30 +6177,40 @@
   }
 
   function clearSalesHistory() {
-    if (confirm("Clear local cache on this device and re-sync fresh logs from Cloudflare D1?")) {
-      salesLog = [];
-      totalSalesToday = 0;
-      lastCloudUpdated = "";
-      safeRemoveStorage("booster_d1_last_updated");
-      saveState();
-      renderSalesLogTable();
-      pullInventoryFromCloud(true);
-    }
+    showNiprConfirm(
+      "Clear Local Cache & Re-Sync?",
+      "Clear local cache on this device and re-sync fresh logs from Cloudflare D1?",
+      "Re-Sync Now",
+      function() {
+        salesLog = [];
+        totalSalesToday = 0;
+        lastCloudUpdated = "";
+        safeRemoveStorage("booster_d1_last_updated");
+        saveState();
+        renderSalesLogTable();
+        pullInventoryFromCloud(true);
+      }
+    );
   }
 
   function factoryResetApp() {
-    if (confirm("Reset local browser cache and re-sync fresh stock, photos & logs from Cloudflare D1? (Your D1 database will NOT be overwritten)")) {
-      safeRemoveStorage("booster_inventory");
-      safeRemoveStorage("booster_base_stock_map");
-      safeRemoveStorage("booster_sellers_roster");
-      safeRemoveStorage("booster_sales_today");
-      safeRemoveStorage("booster_sales_log");
-      safeRemoveStorage("booster_offline_queue");
-      safeRemoveStorage("booster_has_cloud_stock");
-      safeRemoveStorage("booster_d1_last_updated");
-      safeRemoveStorage("booster_zeffy_url");
-      location.reload();
-    }
+    showNiprConfirm(
+      "Reset Local Browser Cache?",
+      "Reset local browser cache and re-sync fresh stock, photos & logs from Cloudflare D1? (Your D1 database will NOT be overwritten)",
+      "Reset & Reload",
+      function() {
+        safeRemoveStorage("booster_inventory");
+        safeRemoveStorage("booster_base_stock_map");
+        safeRemoveStorage("booster_sellers_roster");
+        safeRemoveStorage("booster_sales_today");
+        safeRemoveStorage("booster_sales_log");
+        safeRemoveStorage("booster_offline_queue");
+        safeRemoveStorage("booster_has_cloud_stock");
+        safeRemoveStorage("booster_d1_last_updated");
+        safeRemoveStorage("booster_zeffy_url");
+        location.reload();
+      }
+    );
   }
 
   try {
@@ -6118,6 +6220,8 @@
     document.getElementById("logsModal").style.display = "none";
     const niprBoot = document.getElementById("niprInputModal");
     if (niprBoot) niprBoot.style.display = "none";
+    const niprDlgBoot = document.getElementById("niprDialogModal");
+    if (niprDlgBoot) niprDlgBoot.style.display = "none";
     const zeffyBoot = document.getElementById("zeffyKioskModal");
     if (zeffyBoot) zeffyBoot.style.display = "none";
     syncZeffyUrlInputsUI();
