@@ -1931,15 +1931,15 @@
 
     <div class="zeffy-mode-bar">
       <div class="zeffy-mode-tabs">
-        <button type="button" class="zeffy-mode-tab active" id="zeffyTabQrBtn" onclick="setZeffyModalViewMode(false)">&#128247; Phone QR &amp; NIPR Tab (Default)</button>
-        <button type="button" class="zeffy-mode-tab" id="zeffyTabEmbedBtn" onclick="setZeffyModalViewMode(true)">&#128241; Embedded Tablet Kiosk Form</button>
+        <button type="button" class="zeffy-mode-tab active" id="zeffyTabEmbedBtn" onclick="setZeffyModalViewMode(true)">&#128179; Embedded Zeffy Form (Default)</button>
+        <button type="button" class="zeffy-mode-tab" id="zeffyTabQrBtn" onclick="setZeffyModalViewMode(false)">&#128247; Phone QR &amp; Full Tab</button>
       </div>
-      <button type="button" class="btn-zeffy-embed-toggle" id="zeffyToggleEmbedBtn" onclick="toggleZeffyEmbeddedForm()">&#128241; Show Embedded Tablet Kiosk Form</button>
+      <button type="button" class="btn-zeffy-embed-toggle active" id="zeffyToggleEmbedBtn" onclick="toggleZeffyEmbeddedForm()">&#128247; Switch to Phone QR Code</button>
     </div>
 
     <div class="zeffy-body-area">
-      <!-- DEFAULT COMPACT SIDE-BY-SIDE VIEW: PHONE QR + NIPR FULL-TAB BUTTON (NEVER SQUISHED!) -->
-      <div class="zeffy-default-grid" id="zeffyDefaultCompactView">
+      <!-- SECONDARY COMPACT SIDE-BY-SIDE VIEW: PHONE QR + FULL-TAB BUTTON (1-TAP SWITCH!) -->
+      <div class="zeffy-default-grid" id="zeffyDefaultCompactView" style="display:none;">
         <div class="zeffy-qr-card">
           <div style="font-size:0.8rem; font-weight:900; color:#4c1d95; text-transform:uppercase; letter-spacing:0.4px;">&#128247; Scan with Personal Phone</div>
           <div style="font-size:0.73rem; color:#5b21b6; font-weight:700; margin-top:2px;">Fastest buyer self-checkout!</div>
@@ -1979,18 +1979,18 @@
           </div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-            <button type="button" class="btn-photo" style="background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe; padding:7px 11px;" onclick="setZeffyModalViewMode(true)">&#128241; Using Personal iPad/Tablet? Open Embedded Form</button>
+            <button type="button" class="btn-photo" style="background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe; padding:7px 11px;" onclick="setZeffyModalViewMode(true)">&larr; Back to Embedded Zeffy Form</button>
             <button type="button" class="btn-photo" style="background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd; padding:7px 10px;" onclick="promptAdminEditZeffyUrl()">&#9881; Set / Edit Zeffy URL</button>
           </div>
         </div>
       </div>
 
-      <!-- TOGGLEABLE EMBEDDED TABLET KIOSK PANE (FOR PERSONAL IPAD / PHONE KIOSKS OFF NIPR) -->
-      <div class="zeffy-iframe-pane" id="zeffyEmbeddedPane" style="display:none;">
+      <!-- DEFAULT EMBEDDED ZEFFY CHECKOUT FORM PANE (DYNAMICALLY MOUNTED WHEN MODAL OPENS, DESTROYED ON CLOSE) -->
+      <div class="zeffy-iframe-pane" id="zeffyEmbeddedPane" style="display:flex;">
         <div style="background:#eef2ff; padding:7px 12px; border-bottom:1px solid #cbd5e1; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-          <span style="font-size:0.76rem; font-weight:800; color:#3730a3;">&#128241; Personal Tablet / Phone Embedded Kiosk (Note: On NIPR laptops, use QR or Open Tab)</span>
+          <span style="font-size:0.78rem; font-weight:800; color:#3730a3;">&#128179; Official Zeffy Embedded Checkout &bull; Enter <strong id="zeffyEmbedHeaderAmt" style="color:#4c1d95;">$0.00</strong> below</span>
           <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-            <button type="button" class="btn-photo" onclick="setZeffyModalViewMode(false)">&larr; Back to Phone QR</button>
+            <button type="button" class="btn-photo" style="background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd;" onclick="setZeffyModalViewMode(false)">&#128247; Show Phone QR Code</button>
             <button type="button" class="btn-photo" onclick="reloadZeffyIframe()">&#128260; Reload Form</button>
             <a id="zeffyOpenNewTabLink" href="https://www.zeffy.com/en-US/donation-form/transcom-booster-club-payment" target="_blank" rel="noopener noreferrer" class="btn-photo" style="text-decoration:none; background:#6d28d9; color:#ffffff; font-weight:800; padding:7px 11px;">&#128179; Open Full Tab &nearr;</a>
           </div>
@@ -4472,8 +4472,8 @@
     if (toggleBtn) {
       toggleBtn.classList.toggle("active", zeffyEmbedModeOpen);
       toggleBtn.innerHTML = zeffyEmbedModeOpen
-        ? "&#128247; Hide Embedded Form (Show Phone QR)"
-        : "&#128241; Show Embedded Tablet Kiosk Form";
+        ? "&#128247; Switch to Phone QR Code"
+        : "&#128179; Switch to Embedded Zeffy Form";
     }
     if (zeffyEmbedModeOpen) {
       mountZeffyDynamicIframe(false);
@@ -4505,10 +4505,12 @@
     const amtEl = document.getElementById("zeffyExactAmountDisplay");
     const qrAmtEl = document.getElementById("zeffyQrAmountSub");
     const stepAmtEl = document.getElementById("zeffyStepAmtText");
+    const embHdrAmtEl = document.getElementById("zeffyEmbedHeaderAmt");
     const sumEl = document.getElementById("zeffyOrderSummaryLine");
     if (amtEl) amtEl.textContent = formattedAmt;
     if (qrAmtEl) qrAmtEl.textContent = formattedAmt;
     if (stepAmtEl) stepAmtEl.textContent = formattedAmt;
+    if (embHdrAmtEl) embHdrAmtEl.textContent = formattedAmt;
     if (sumEl) sumEl.textContent = parts.join(" • ") || "Current Order";
 
     const embedWrap = document.getElementById("zeffyOfficialEmbedWrap");
@@ -4562,7 +4564,8 @@
     const total = getCartTotal();
     if (total <= 0) return;
     closeDirPopover();
-    setZeffyModalViewMode(false);
+    const hasUrl = Boolean(deriveZeffyUrls(zeffyUrl).embedUrl);
+    setZeffyModalViewMode(hasUrl);
     populateZeffyKioskModalUI();
     const modal = document.getElementById("zeffyKioskModal");
     if (modal) modal.style.display = "flex";
@@ -6463,11 +6466,11 @@
     const zefEl = clone.querySelector("#zeffyKioskModal");
     if (zefEl) zefEl.style.display = "none";
     const zefCard = clone.querySelector("#zeffyKioskCard");
-    if (zefCard) zefCard.classList.remove("embed-open");
+    if (zefCard) zefCard.classList.add("embed-open");
     const zefCompact = clone.querySelector("#zeffyDefaultCompactView");
-    if (zefCompact) zefCompact.style.display = "grid";
+    if (zefCompact) zefCompact.style.display = "none";
     const zefEmbedPane = clone.querySelector("#zeffyEmbeddedPane");
-    if (zefEmbedPane) zefEmbedPane.style.display = "none";
+    if (zefEmbedPane) zefEmbedPane.style.display = "flex";
     const zefHost = clone.querySelector("#zeffyDynamicIframeHost");
     if (zefHost) zefHost.innerHTML = "";
     const dirPop = clone.querySelector("#dirQuickPopover");
