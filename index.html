@@ -1095,16 +1095,16 @@
 <body>
 
 <div class="pin-lock-screen" id="pinLockScreen">
-  <!-- STEP 1: ONE-TIME DEVICE PIN UNLOCK (Only shown the very first time a new device opens the app, or if someone explicitly clicks 'Require PIN') -->
+  <!-- STEP 1: ONE-TIME DEVICE PIN UNLOCK (Verified securely against Cloudflare Secret ADMIN_PIN via /api) -->
   <div class="pin-card" id="pinStepCard" style="display:none;">
     <h2>Booster Club POS</h2>
-    <p>One-Time Device Setup: Enter 4-Digit PIN</p>
-    <div class="pin-dots" id="pinDots">
-      <span class="pin-dot"></span>
-      <span class="pin-dot"></span>
-      <span class="pin-dot"></span>
-      <span class="pin-dot"></span>
+    <p>Device Unlock: Enter Booster Admin PIN / Password</p>
+    <div style="margin-bottom:10px;">
+      <input type="password" id="adminPinInput" placeholder="Enter Admin PIN or Password" autocomplete="off"
+        style="width:100%; padding:12px 14px; font-size:1.05rem; font-weight:700; text-align:center; border:2px solid #93c5fd; border-radius:10px; outline:none;"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();submitPinUnlock();}">
     </div>
+    <button type="button" class="btn-complete" id="unlockPinBtn" onclick="submitPinUnlock()" style="margin-bottom:12px;">Unlock POS Register</button>
     <div class="pin-keypad">
       <button type="button" class="pin-key" onclick="pressPinDigit('1')">1</button>
       <button type="button" class="pin-key" onclick="pressPinDigit('2')">2</button>
@@ -1358,7 +1358,7 @@
       <!-- SELLER ROSTER MANAGEMENT SECTION -->
       <div class="seller-roster-box">
         <h3>&#128101; Manage Booster Club Sellers / Cashiers Roster</h3>
-        <p>These names appear as one-tap buttons whenever someone opens the register or clicks "Switch Seller". <strong>100% Cloud-Synced:</strong> Adding or removing a seller here automatically saves to your Google Sheet and updates all devices—no GitHub upload needed!</p>
+        <p>These names appear as one-tap buttons whenever someone opens the register or clicks "Switch Seller". <strong>100% Cloud-Synced:</strong> Adding or removing a seller here automatically saves to your Cloudflare D1 database and updates all devices!</p>
         <div class="seller-chips-wrap" id="sellerRosterChips"></div>
         <div class="add-seller-row">
           <input type="text" id="newSellerNameInput" placeholder="Enter Seller Name (e.g., SSgt Smith)" onkeydown="if(event.key==='Enter'){event.preventDefault();addSellerFromSettings();}">
@@ -1368,9 +1368,9 @@
 
       <div style="margin-top:16px; padding-top:12px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <button type="button" class="btn-action" onclick="exportSelfContainedHTML()">Save Updated HTML App (Bakes Sellers, Photos, PIN &amp; URL In)</button>
-          <button type="button" class="btn-action amber" onclick="changeBoosterPin()">Change 4-Digit PIN</button>
-          <button type="button" class="btn-action green" onclick="recalculateStockFromSalesLog()">Subtract Logged Sales from Stock</button>
+          <button type="button" class="btn-action green" onclick="migrateLegacyDataToD1()">&#128230; Migrate Old Google Sheet / Local Data to D1</button>
+          <button type="button" class="btn-action amber" onclick="changeBoosterPin()">Admin PIN Info / Lock</button>
+          <button type="button" class="btn-action" onclick="exportSelfContainedHTML()">Download Backup HTML</button>
         </div>
         <button type="button" class="btn-del" onclick="factoryResetApp()">Reset Local Cache &amp; Re-Sync</button>
       </div>
@@ -1391,12 +1391,20 @@
     </div>
     <div class="modal-body">
       <div class="cloud-config-box" id="cloudConfigBox">
-        <strong style="font-size:0.86rem; color:var(--primary);">Booster Club Google Apps Script Web App URL (/exec)</strong>
-        <div class="cloud-url-row">
-          <input type="text" id="cloudUrlInput" placeholder="Paste your Google Apps Script /exec Web App URL here">
-          <button type="button" class="btn-action green" onclick="saveAndTestCloudUrl()">Save &amp; Connect</button>
-          <button type="button" class="btn-action" onclick="pushInventoryToCloud(false)">Force Push This Device's Stock</button>
-          <button type="button" class="btn-del" onclick="clearSalesHistory()">Clear Local Cache</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+          <strong style="font-size:0.88rem; color:var(--primary);">&#9729; Cloudflare D1 SQLite Database (<code>/api</code> &bull; NIPR-Safe Same-Domain Sync)</strong>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button type="button" class="btn-action" onclick="pushInventoryToCloud(false)">Force Push Inventory to D1</button>
+            <button type="button" class="btn-del" onclick="clearSalesHistory()">Clear Local Cache &amp; Re-Sync</button>
+          </div>
+        </div>
+        <div style="border-top:1px solid #bfdbfe; padding-top:8px; margin-top:6px;">
+          <span style="font-size:0.78rem; font-weight:700; color:#1e3a8a; display:block; margin-bottom:4px;">One-Time Migration: Import Past Sales, Stock, Photos &amp; Cash Box from Google Sheets / Local Storage into D1</span>
+          <div class="cloud-url-row">
+            <input type="text" id="legacySheetUrlInput" value="https://script.google.com/macros/s/AKfycbyEGbiHjh0CXwfSlivzGcJG-CSkJVECy-z-qEw3jAG8J0Z1jqnuwMQAosgyTooVBw7w/exec" placeholder="Optional: Old Google Apps Script /exec URL to pull past history from">
+            <button type="button" class="btn-action green" onclick="migrateLegacyDataToD1()">&#128230; Migrate All Data to Cloudflare D1</button>
+          </div>
+          <small style="display:block; margin-top:4px; font-size:0.72rem; color:var(--muted);">Tip: If USTRANSCOM NIPR blocks <code>script.google.com</code>, tap this button once on a personal phone/laptop to pull directly from Google Sheets into D1—then refresh here on NIPR!</small>
         </div>
       </div>
 
@@ -1487,11 +1495,9 @@
 </div>
 
 <script>
-  // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL BETWEEN THE QUOTES BELOW:
-  const DEFAULT_CLOUD_URL = "https://script.google.com/macros/s/AKfycbyEGbiHjh0CXwfSlivzGcJG-CSkJVECy-z-qEw3jAG8J0Z1jqnuwMQAosgyTooVBw7w/exec";
-
-  // 4-DIGIT BOOSTER CLUB PIN CODE (Change below or via Inventory settings):
-  const DEFAULT_APP_PIN = "2013";
+  // CLOUDFLARE D1 SAME-DOMAIN API ENDPOINT (No hardcoded PINs or Google Sheets polling!):
+  const D1_API_URL = "/api";
+  const LEGACY_GAS_URL_FOR_MIGRATION = "https://script.google.com/macros/s/AKfycbyEGbiHjh0CXwfSlivzGcJG-CSkJVECy-z-qEw3jAG8J0Z1jqnuwMQAosgyTooVBw7w/exec";
 
   // DEFAULT BOOSTER CLUB SELLERS ROSTER (Manage inside 'Inventory & Sellers' modal):
   const defaultSellers = ["TSgt Vaidya", "MSgt Dunn"];
@@ -1593,13 +1599,22 @@
     try {
       return window.sessionStorage.getItem(key);
     } catch (e) {
-      return null;
+      return Object.prototype.hasOwnProperty.call(memoryFallbackStore, "__sess_" + key) ? memoryFallbackStore["__sess_" + key] : null;
     }
   }
   function safeSetSession(key, val) {
     try {
       window.sessionStorage.setItem(key, val);
-    } catch (e) {}
+    } catch (e) {
+      memoryFallbackStore["__sess_" + key] = String(val);
+    }
+  }
+  function safeRemoveSession(key) {
+    try {
+      window.sessionStorage.removeItem(key);
+    } catch (e) {
+      delete memoryFallbackStore["__sess_" + key];
+    }
   }
 
   function safeParseJSON(key, fallback) {
@@ -1697,12 +1712,10 @@
   let offlineQueue = safeParseJSON("booster_offline_queue", []);
   if (!Array.isArray(offlineQueue)) offlineQueue = [];
 
-  // ALWAYS prioritize DEFAULT_CLOUD_URL so every device connects to your active Google Sheet!
-  let cloudUrl = safeGetStorage("booster_cloud_url") || DEFAULT_CLOUD_URL;
-  if (DEFAULT_CLOUD_URL && !safeGetStorage("booster_cloud_url")) {
-    safeSetStorage("booster_cloud_url", DEFAULT_CLOUD_URL);
-  }
-  let appPin = safeGetStorage("booster_app_pin") || DEFAULT_APP_PIN;
+  // Connect directly to Cloudflare Pages Functions + D1 (/api) on the same domain
+  let cloudUrl = D1_API_URL;
+  let lastCloudUpdated = safeGetStorage("booster_d1_last_updated") || "";
+  let verifiedAdminPin = safeGetSession("booster_verified_admin_pin") || "";
 
   let sellersRoster = safeParseJSON("booster_sellers_roster", defaultSellers);
   if (!Array.isArray(sellersRoster) || sellersRoster.length === 0 || (sellersRoster.length === 2 && sellersRoster[0] === "Booster Member 1" && sellersRoster[1] === "Booster Member 2")) {
@@ -2028,6 +2041,38 @@
     document.getElementById("pinLockScreen").style.display = "none";
   }
 
+  function verifyPinWithServer(candidatePin) {
+    return fetch(D1_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "verifyPin", adminPin: String(candidatePin || "").trim() })
+    })
+      .then(function(res) { return res.ok ? res.json() : { ok: false, valid: false }; })
+      .then(function(data) { return Boolean(data && data.ok && data.valid); })
+      .catch(function() { return false; });
+  }
+
+  function ensureAdminPinVerified(onSuccess) {
+    if (verifiedAdminPin) {
+      onSuccess(verifiedAdminPin);
+      return;
+    }
+    const entered = prompt("Admin Authorization Required\n\nEnter your Booster Club ADMIN_PIN / Password:");
+    if (entered === null) return;
+    const trimmed = String(entered).trim();
+    if (!trimmed) return;
+    verifyPinWithServer(trimmed).then(function(isValid) {
+      if (!isValid) {
+        alert("Incorrect Admin PIN / Password (or unable to reach /api).");
+        return;
+      }
+      verifiedAdminPin = trimmed;
+      safeSetSession("booster_verified_admin_pin", verifiedAdminPin);
+      safeSetStorage("booster_pin_unlocked", "true");
+      onSuccess(verifiedAdminPin);
+    });
+  }
+
   function addSellerToRoster(name) {
     const cleaned = String(name || "").trim();
     if (!cleaned) return false;
@@ -2037,8 +2082,7 @@
     if (sellersRoster.indexOf(cleaned) === -1) {
       sellersRoster.push(cleaned);
       safeSetStorage("booster_sellers_roster", JSON.stringify(sellersRoster));
-      inventoryDirty = true;
-      scheduleAutoPushInventory();
+      pushSettingsToCloud(true);
     }
     updateSellerUI();
     return true;
@@ -2049,8 +2093,10 @@
     if (!input) return;
     const val = input.value.trim();
     if (!val) return;
-    addSellerToRoster(val);
-    input.value = "";
+    ensureAdminPinVerified(function() {
+      addSellerToRoster(val);
+      input.value = "";
+    });
   }
 
   function removeSellerFromRoster(index) {
@@ -2060,21 +2106,24 @@
       alert("You must keep at least 1 seller name in the roster.");
       return;
     }
-    if (!confirm("Remove '" + target + "' from the Seller Roster buttons?")) return;
-    sellersRoster.splice(index, 1);
-    safeSetStorage("booster_sellers_roster", JSON.stringify(sellersRoster));
-    inventoryDirty = true;
-    updateSellerUI();
-    scheduleAutoPushInventory();
+    ensureAdminPinVerified(function() {
+      if (!confirm("Remove '" + target + "' from the Seller Roster buttons?")) return;
+      sellersRoster.splice(index, 1);
+      safeSetStorage("booster_sellers_roster", JSON.stringify(sellersRoster));
+      updateSellerUI();
+      pushSettingsToCloud(true);
+    });
   }
 
   function promptAddSellerFromPicker() {
-    const newName = prompt("Enter your Seller / Cashier Name to add to the button list:");
-    if (newName === null) return;
-    const cleaned = newName.trim();
-    if (!cleaned) return;
-    addSellerToRoster(cleaned);
-    selectActiveSellerForSession(cleaned);
+    ensureAdminPinVerified(function() {
+      const newName = prompt("Enter your Seller / Cashier Name to add to the button list:");
+      if (newName === null) return;
+      const cleaned = newName.trim();
+      if (!cleaned) return;
+      addSellerToRoster(cleaned);
+      selectActiveSellerForSession(cleaned);
+    });
   }
 
   function showLockOrSellerScreen() {
@@ -2087,6 +2136,8 @@
       lockScreen.style.display = "flex";
       pinCard.style.display = "block";
       sellerCard.style.display = "none";
+      const inp = document.getElementById("adminPinInput");
+      if (inp) setTimeout(function() { inp.focus(); }, 60);
       return;
     }
 
@@ -2110,80 +2161,87 @@
 
   function requirePinLockNow() {
     safeRemoveStorage("booster_pin_unlocked");
+    safeRemoveSession("booster_verified_admin_pin");
+    verifiedAdminPin = "";
     enteredPin = "";
-    renderPinDots(false);
+    const inp = document.getElementById("adminPinInput");
+    if (inp) inp.value = "";
     document.getElementById("pinErrorMsg").textContent = "";
     showLockOrSellerScreen();
   }
 
-  function renderPinDots(isError) {
-    const dots = document.querySelectorAll("#pinDots .pin-dot");
-    dots.forEach(function(d, idx) {
-      d.className = "pin-dot" + (idx < enteredPin.length ? " filled" : "") + (isError ? " error" : "");
+  function submitPinUnlock() {
+    const inp = document.getElementById("adminPinInput");
+    const errEl = document.getElementById("pinErrorMsg");
+    const btn = document.getElementById("unlockPinBtn");
+    const val = String((inp && inp.value) || enteredPin || "").trim();
+    if (!val) {
+      if (errEl) errEl.textContent = "Please enter your Admin PIN / Password.";
+      return;
+    }
+    if (errEl) errEl.textContent = "";
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Verifying...";
+    }
+    verifyPinWithServer(val).then(function(isValid) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Unlock POS Register";
+      }
+      if (isValid) {
+        verifiedAdminPin = val;
+        safeSetSession("booster_verified_admin_pin", verifiedAdminPin);
+        safeSetStorage("booster_pin_unlocked", "true");
+        enteredPin = "";
+        if (inp) inp.value = "";
+        showLockOrSellerScreen();
+      } else {
+        if (errEl) errEl.textContent = "Incorrect Admin PIN / Password. Try again.";
+      }
     });
   }
 
   function pressPinDigit(digit) {
-    if (enteredPin.length >= 4) return;
+    const inp = document.getElementById("adminPinInput");
     document.getElementById("pinErrorMsg").textContent = "";
-    enteredPin += String(digit);
-    renderPinDots(false);
-    if (enteredPin.length === 4) {
-      if (enteredPin === String(appPin)) {
-        safeSetStorage("booster_pin_unlocked", "true");
-        enteredPin = "";
-        renderPinDots(false);
-        showLockOrSellerScreen();
-      } else {
-        renderPinDots(true);
-        document.getElementById("pinErrorMsg").textContent = "Incorrect PIN. Try again.";
-        setTimeout(function() {
-          enteredPin = "";
-          renderPinDots(false);
-        }, 550);
-      }
+    if (inp) {
+      inp.value = String(inp.value || "") + String(digit);
+      enteredPin = inp.value;
+    } else {
+      enteredPin += String(digit);
     }
   }
 
   function clearPinEntry() {
     enteredPin = "";
+    const inp = document.getElementById("adminPinInput");
+    if (inp) inp.value = "";
     document.getElementById("pinErrorMsg").textContent = "";
-    renderPinDots(false);
   }
 
   function backspacePinEntry() {
-    enteredPin = enteredPin.slice(0, -1);
+    const inp = document.getElementById("adminPinInput");
+    if (inp) {
+      inp.value = String(inp.value || "").slice(0, -1);
+      enteredPin = inp.value;
+    } else {
+      enteredPin = enteredPin.slice(0, -1);
+    }
     document.getElementById("pinErrorMsg").textContent = "";
-    renderPinDots(false);
   }
 
   function changeBoosterPin() {
-    const newPin = prompt("Enter a new 4-digit PIN code for the Booster Club POS:", appPin);
-    if (newPin === null) return;
-    const cleaned = String(newPin).trim();
-    if (!/^\d{4}$/.test(cleaned)) {
-      alert("PIN must be exactly 4 digits (e.g., 2013).");
-      return;
+    const lockNow = confirm(
+      "ENCRYPTED ADMIN_PIN SECURITY\n\n" +
+      "Your Admin PIN / Password is now stored as an encrypted server secret (ADMIN_PIN) inside Cloudflare Pages -> Settings -> Variables and Secrets, so it never appears in your HTML code.\n\n" +
+      "Would you like to lock this browser session right now so the Admin PIN must be re-entered?"
+    );
+    if (lockNow) {
+      closeInventoryModal();
+      requirePinLockNow();
     }
-    appPin = cleaned;
-    safeSetStorage("booster_app_pin", appPin);
-    inventoryDirty = true;
-    scheduleAutoPushInventory();
-    alert("PIN updated to " + appPin + " and synced to your Google Sheet for all devices!");
   }
-
-  document.addEventListener("keydown", function(e) {
-    const lockEl = document.getElementById("pinLockScreen");
-    const pinCard = document.getElementById("pinStepCard");
-    if (!lockEl || lockEl.style.display === "none" || !pinCard || pinCard.style.display === "none") return;
-    if (e.key >= "0" && e.key <= "9") {
-      pressPinDigit(e.key);
-    } else if (e.key === "Backspace") {
-      backspacePinEntry();
-    } else if (e.key === "Escape") {
-      clearPinEntry();
-    }
-  });
 
   function isSameLocalDate(timestampStr, targetDateObj) {
     if (!timestampStr || !targetDateObj) return false;
@@ -2820,79 +2878,82 @@
   }
 
   function zeroOutCashBox() {
-    const currentBox = getPhysicalCashInBox();
-    if (!confirm("ZERO OUT CASH BOX?\n\nCurrent Physical Cash in Box: $" + currentBox.toFixed(2) + "\n\nClicking OK will reset the physical cash box counter to $0.00 (for example, after taking all cash to the bank). Your historical sales logs and revenue reports will NOT be deleted.")) {
-      return;
-    }
-    const prevHistory = Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history : [];
-    cashBoxConfig = {
-      startingCash: 0,
-      baselineSalesCash: getAllTimeCashSalesTotal(),
-      lastUpdated: getFormattedTimestamp(),
-      history: prevHistory
-    };
-    recordCashBoxAdjustment("Zero Out Cash Box", currentBox, currentBox, 0, "Emptied box to $0.00");
-    inventoryDirty = true;
-    saveState();
-    updateCashBoxUI();
-    scheduleAutoPushInventory();
+    ensureAdminPinVerified(function() {
+      const currentBox = getPhysicalCashInBox();
+      if (!confirm("ZERO OUT CASH BOX?\n\nCurrent Physical Cash in Box: $" + currentBox.toFixed(2) + "\n\nClicking OK will reset the physical cash box counter to $0.00 (for example, after taking all cash to the bank). Your historical sales logs and revenue reports will NOT be deleted.")) {
+        return;
+      }
+      const prevHistory = Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history : [];
+      cashBoxConfig = {
+        startingCash: 0,
+        baselineSalesCash: getAllTimeCashSalesTotal(),
+        lastUpdated: getFormattedTimestamp(),
+        history: prevHistory
+      };
+      recordCashBoxAdjustment("Zero Out Cash Box", currentBox, currentBox, 0, "Emptied box to $0.00");
+      saveState();
+      updateCashBoxUI();
+      pushSettingsToCloud(true);
+    });
   }
 
   function promptBankDropLeaveChange() {
-    const currentBox = getPhysicalCashInBox();
-    const raw = prompt(
-      "BANK DEPOSIT / LEAVE CHANGE IN BOX\n\n" +
-      "Current Physical Cash in Box: $" + currentBox.toFixed(2) + "\n\n" +
-      "How much cash/change are you LEAVING inside the box for future change? (Enter 0 if taking everything to the bank):",
-      "0.00"
-    );
-    if (raw === null) return;
-    const leftInBox = parseFloat(raw);
-    if (isNaN(leftInBox) || leftInBox < 0) {
-      alert("Please enter a valid dollar amount (0 or greater).");
-      return;
-    }
-    const takenToBank = Math.max(0, currentBox - leftInBox);
-    const prevHistory = Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history : [];
-    cashBoxConfig = {
-      startingCash: leftInBox,
-      baselineSalesCash: getAllTimeCashSalesTotal(),
-      lastUpdated: getFormattedTimestamp(),
-      history: prevHistory
-    };
-    recordCashBoxAdjustment("Bank Deposit", currentBox, takenToBank, leftInBox, "Deposited $" + takenToBank.toFixed(2) + ", left $" + leftInBox.toFixed(2) + " change");
-    inventoryDirty = true;
-    saveState();
-    updateCashBoxUI();
-    scheduleAutoPushInventory();
-    alert("Cash Box Updated!\n\n• Taken to Bank: $" + takenToBank.toFixed(2) + "\n• Change Left in Box: $" + leftInBox.toFixed(2));
+    ensureAdminPinVerified(function() {
+      const currentBox = getPhysicalCashInBox();
+      const raw = prompt(
+        "BANK DEPOSIT / LEAVE CHANGE IN BOX\n\n" +
+        "Current Physical Cash in Box: $" + currentBox.toFixed(2) + "\n\n" +
+        "How much cash/change are you LEAVING inside the box for future change? (Enter 0 if taking everything to the bank):",
+        "0.00"
+      );
+      if (raw === null) return;
+      const leftInBox = parseFloat(raw);
+      if (isNaN(leftInBox) || leftInBox < 0) {
+        alert("Please enter a valid dollar amount (0 or greater).");
+        return;
+      }
+      const takenToBank = Math.max(0, currentBox - leftInBox);
+      const prevHistory = Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history : [];
+      cashBoxConfig = {
+        startingCash: leftInBox,
+        baselineSalesCash: getAllTimeCashSalesTotal(),
+        lastUpdated: getFormattedTimestamp(),
+        history: prevHistory
+      };
+      recordCashBoxAdjustment("Bank Deposit", currentBox, takenToBank, leftInBox, "Deposited $" + takenToBank.toFixed(2) + ", left $" + leftInBox.toFixed(2) + " change");
+      saveState();
+      updateCashBoxUI();
+      pushSettingsToCloud(true);
+      alert("Cash Box Updated!\n\n• Taken to Bank: $" + takenToBank.toFixed(2) + "\n• Change Left in Box: $" + leftInBox.toFixed(2));
+    });
   }
 
   function promptSetExactCashBox() {
-    const currentBox = getPhysicalCashInBox();
-    const raw = prompt(
-      "SET EXACT CASH IN BOX\n\n" +
-      "Enter the exact total dollar amount physically inside the cash box right now (e.g., if you just counted the box or added starting change):",
-      currentBox.toFixed(2)
-    );
-    if (raw === null) return;
-    const exactVal = parseFloat(raw);
-    if (isNaN(exactVal) || exactVal < 0) {
-      alert("Please enter a valid dollar amount (0 or greater).");
-      return;
-    }
-    const prevHistory = Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history : [];
-    cashBoxConfig = {
-      startingCash: exactVal,
-      baselineSalesCash: getAllTimeCashSalesTotal(),
-      lastUpdated: getFormattedTimestamp(),
-      history: prevHistory
-    };
-    recordCashBoxAdjustment("Set Exact Cash", currentBox, Math.max(0, currentBox - exactVal), exactVal, "Manually set cash box to $" + exactVal.toFixed(2));
-    inventoryDirty = true;
-    saveState();
-    updateCashBoxUI();
-    scheduleAutoPushInventory();
+    ensureAdminPinVerified(function() {
+      const currentBox = getPhysicalCashInBox();
+      const raw = prompt(
+        "SET EXACT CASH IN BOX\n\n" +
+        "Enter the exact total dollar amount physically inside the cash box right now (e.g., if you just counted the box or added starting change):",
+        currentBox.toFixed(2)
+      );
+      if (raw === null) return;
+      const exactVal = parseFloat(raw);
+      if (isNaN(exactVal) || exactVal < 0) {
+        alert("Please enter a valid dollar amount (0 or greater).");
+        return;
+      }
+      const prevHistory = Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history : [];
+      cashBoxConfig = {
+        startingCash: exactVal,
+        baselineSalesCash: getAllTimeCashSalesTotal(),
+        lastUpdated: getFormattedTimestamp(),
+        history: prevHistory
+      };
+      recordCashBoxAdjustment("Set Exact Cash", currentBox, Math.max(0, currentBox - exactVal), exactVal, "Manually set cash box to $" + exactVal.toFixed(2));
+      saveState();
+      updateCashBoxUI();
+      pushSettingsToCloud(true);
+    });
   }
 
   function viewCashBoxHistoryModal() {
@@ -2981,6 +3042,12 @@
   }
 
   function editSaleRecord(orderId) {
+    ensureAdminPinVerified(function() {
+      editSaleRecordVerified(orderId);
+    });
+  }
+
+  function editSaleRecordVerified(orderId) {
     if (editingSaleBackup) {
       alert("You are already editing an order in the register. Please complete or cancel that edit first.");
       return;
@@ -3107,6 +3174,72 @@
   }
 
   let isCompletingSale = false;
+  function extractSaleStockItems(sale) {
+    const items = [];
+    if (!sale) return items;
+    if (Array.isArray(sale.lineItems) && sale.lineItems.length > 0) {
+      sale.lineItems.forEach(function(li) {
+        if (!li || isCustomOrEventItemName(li.itemName) || isSettingsItemName(li.itemName)) return;
+        const q = parseInt(li.qty, 10) || 0;
+        if (q > 0) {
+          const match = inventory.find(function(inv) {
+            return String(inv.name).trim().toLowerCase() === String(li.itemName || "").trim().toLowerCase();
+          });
+          items.push({ id: match ? String(match.id) : "", name: String(li.itemName || "").trim(), qty: q });
+        }
+      });
+    } else if (sale.itemQuantities && typeof sale.itemQuantities === "object") {
+      Object.keys(sale.itemQuantities).forEach(function(k) {
+        if (isCustomOrEventItemName(k) || isSettingsItemName(k)) return;
+        const q = parseInt(sale.itemQuantities[k], 10) || 0;
+        if (q > 0) {
+          const match = inventory.find(function(inv) {
+            return String(inv.name).trim().toLowerCase() === String(k).trim().toLowerCase();
+          });
+          items.push({ id: match ? String(match.id) : "", name: String(k).trim(), qty: q });
+        }
+      });
+    }
+    return items;
+  }
+
+  function toD1SaleEntry(saleRecord) {
+    return Object.assign({}, saleRecord, {
+      uid: String(saleRecord.orderId || ("ORD-" + Date.now())),
+      orderId: String(saleRecord.orderId || ""),
+      timestamp: String(saleRecord.timestamp || getFormattedTimestamp()),
+      item: String(saleRecord.items || ""),
+      qty: parseInt(saleRecord.totalQty, 10) || 0,
+      total: parseFloat(saleRecord.total) || 0,
+      paymentMethod: String(saleRecord.paymentMethod || "Cash"),
+      seller: String(saleRecord.sellerName || ""),
+      buyer: String(saleRecord.buyerName || "Walk-up")
+    });
+  }
+
+  function normalizeD1SaleForUI(s) {
+    if (!s) return null;
+    const norm = Object.assign({}, s);
+    norm.orderId = String(norm.orderId || norm.uid || "");
+    norm.timestamp = String(norm.timestamp || "");
+    norm.buyerName = String(norm.buyerName || norm.buyer || "Walk-up");
+    norm.sellerName = String(norm.sellerName || norm.seller || "");
+    norm.directorate = cleanDirectorateValue(norm.directorate);
+    norm.paymentMethod = String(norm.paymentMethod || norm.payment || "Cash");
+    norm.totalQty = parseInt(norm.totalQty !== undefined ? norm.totalQty : norm.qty, 10) || 0;
+    norm.total = (parseFloat(norm.total) || 0).toFixed(2);
+    norm.cashPaid = norm.cashPaid !== undefined ? (parseFloat(norm.cashPaid) || 0).toFixed(2) : norm.total;
+    norm.change = norm.change !== undefined ? (parseFloat(norm.change) || 0).toFixed(2) : "0.00";
+    norm.keptChange = norm.keptChange !== undefined ? (parseFloat(norm.keptChange) || 0).toFixed(2) : "0.00";
+    norm.items = String(norm.items || norm.item || "");
+    if (norm.itemQuantities && typeof norm.itemQuantities === "object") {
+      Object.keys(norm.itemQuantities).forEach(function(k) {
+        if (isSettingsItemName(k)) delete norm.itemQuantities[k];
+      });
+    }
+    return norm;
+  }
+
   function completeSale() {
     if (isCompletingSale) return;
     const total = getCartTotal();
@@ -3127,7 +3260,6 @@
 
     let cashPaid = total;
     let changeGiven = 0;
-
     let keptChangeAmt = 0;
     if (currentPaymentMethod === "Cash") {
       const rawCash = parseFloat(document.getElementById("cashInput").value);
@@ -3145,6 +3277,7 @@
 
     const lineItems = [];
     const soldSummaryParts = [];
+    const stockAdjustments = [];
     let totalQty = 0;
 
     Object.entries(cart).forEach(function(entry) {
@@ -3162,6 +3295,11 @@
           qty: qty,
           unitPriceCharged: unitPrice.toFixed(2),
           lineSubtotal: lineSubtotal.toFixed(2)
+        });
+        stockAdjustments.push({
+          id: String(item.id),
+          name: item.name,
+          delta: -qty
         });
         soldSummaryParts.push(qty + "x " + item.name + " ($" + unitPrice.toFixed(2) + ")");
         totalQty += qty;
@@ -3215,161 +3353,149 @@
         salesLog.unshift(saleRecord);
       }
       editingSaleBackup = null;
-      inventoryDirty = true;
       updateEditingBannerUI();
+
+      saveState();
+      updateCashBoxUI();
+      sendEditedOrderToD1(wasEditing, saleRecord, stockAdjustments);
     } else {
       salesLog.unshift(saleRecord);
+      saveState();
+      updateCashBoxUI();
+      sendSaleToCloud(saleRecord, stockAdjustments);
     }
 
-    saveState();
-    updateCashBoxUI();
-
-    sendSaleToCloud(saleRecord);
     clearCart();
     toggleMobileDrawer(false);
   }
 
   function voidSaleRecord(orderId) {
-    const idx = salesLog.findIndex(function(s) { return s && String(s.orderId) === String(orderId); });
-    if (idx === -1) return;
-    const sale = salesLog[idx];
-    const parsed = parseBuyerAndSeller(sale);
+    ensureAdminPinVerified(function() {
+      const idx = salesLog.findIndex(function(s) { return s && String(s.orderId) === String(orderId); });
+      if (idx === -1) return;
+      const sale = salesLog[idx];
+      const parsed = parseBuyerAndSeller(sale);
 
-    const confirmMsg = "VOID / REFUND ORDER?\n\n" +
-      "Buyer: " + parsed.buyer + " (" + (sale.directorate || "—") + ")\n" +
-      "Total: $" + (sale.total || "0.00") + " (" + (sale.items || "") + ")\n\n" +
-      "Clicking OK will:\n" +
-      "1. Add the sold items back into your Inventory stock counts.\n" +
-      "2. Remove this order from your Sales Log and update your Cloud Stock.";
-    if (!confirm(confirmMsg)) return;
+      const confirmMsg = "VOID / REFUND ORDER?\n\n" +
+        "Buyer: " + parsed.buyer + " (" + (sale.directorate || "—") + ")\n" +
+        "Total: $" + (sale.total || "0.00") + " (" + (sale.items || "") + ")\n\n" +
+        "Clicking OK will:\n" +
+        "1. Add the sold items back into your Cloudflare D1 Inventory stock counts.\n" +
+        "2. Mark this order as voided in Cloudflare D1 across all devices.";
+      if (!confirm(confirmMsg)) return;
 
-    if (Array.isArray(sale.lineItems) && sale.lineItems.length > 0) {
-      sale.lineItems.forEach(function(li) {
-        const match = inventory.find(function(invItem) {
-          return String(invItem.name).trim().toLowerCase() === String(li.itemName || "").trim().toLowerCase();
-        });
-        if (match) {
-          match.stock = (parseInt(match.stock, 10) || 0) + (parseInt(li.qty, 10) || 0);
+      const restockList = extractSaleStockItems(sale);
+      restoreSaleStockToInventory(sale);
+
+      if (sale.orderId && voidedOrderIds.indexOf(String(sale.orderId)) === -1) {
+        voidedOrderIds.push(String(sale.orderId));
+      }
+      salesLog.splice(idx, 1);
+      saveState();
+      renderGrid();
+      renderCart();
+      if (isInventoryModalOpen()) renderInventoryTable();
+      if (isLogsModalOpen()) renderSalesLogTable();
+
+      postToD1Api({
+        action: "voidOrder",
+        orderId: String(sale.orderId || ""),
+        restock: restockList
+      }, true).then(function(res) {
+        if (res && res.lastUpdated) {
+          lastCloudUpdated = String(res.lastUpdated);
+          safeSetStorage("booster_d1_last_updated", lastCloudUpdated);
         }
+        updateCloudBadge();
+      }).catch(function() {
+        setSyncIndicator("Offline (Void Local)", "offline");
       });
-    } else if (sale.itemQuantities) {
-      Object.keys(sale.itemQuantities).forEach(function(k) {
-        const q = parseInt(sale.itemQuantities[k], 10) || 0;
-        if (q > 0) {
-          const match = inventory.find(function(invItem) {
-            return String(invItem.name).trim().toLowerCase() === String(k).trim().toLowerCase();
-          });
-          if (match) {
-            match.stock = (parseInt(match.stock, 10) || 0) + q;
-          }
-        }
-      });
-    }
-
-    if (sale.orderId && voidedOrderIds.indexOf(String(sale.orderId)) === -1) {
-      voidedOrderIds.push(String(sale.orderId));
-    }
-    salesLog.splice(idx, 1);
-    inventoryDirty = true;
-    saveState();
-    renderGrid();
-    renderCart();
-    if (isInventoryModalOpen()) renderInventoryTable();
-    if (isLogsModalOpen()) renderSalesLogTable();
-    pushInventoryToCloud(true);
-  }
-
-  function isGoogleAppsScriptUrl(url) {
-    return String(url || "").indexOf("script.google.com") !== -1;
-  }
-
-  function getCleanInventoryForCloud() {
-    const itemsPayload = inventory
-      .filter(function(i) { return i && !isSettingsRow(i); })
-      .map(function(i) {
-        return {
-          id: i.id,
-          name: i.name,
-          price: Number(i.price) || 0,
-          isPatchDeal: Boolean(i.isPatchDeal),
-          stock: parseInt(i.stock, 10) || 0,
-          image: (typeof i.image === "string" && i.image) ? i.image : getPreloadedImage(i.id, i.name)
-        };
-      });
-
-    const cappedVoided = Array.isArray(voidedOrderIds) ? voidedOrderIds.slice(-100) : [];
-    const cappedCashBox = Object.assign({}, cashBoxConfig, {
-      history: Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history.slice(0, 10) : []
     });
-    const settingsObj = {
-      sellers: sellersRoster,
-      pin: appPin,
-      baseStocks: baseStockMap,
-      voidedOrders: cappedVoided,
-      cashBox: cappedCashBox
-    };
-    const settingsJson = JSON.stringify(settingsObj);
-
-    itemsPayload.push({
-      id: 999999,
-      name: SETTINGS_ROW_NAME + ":" + settingsJson,
-      price: 0,
-      isPatchDeal: false,
-      stock: 0,
-      image: settingsJson
-    });
-
-    return itemsPayload;
   }
 
-  function postPayloadToCloud(payload) {
-    if (isGoogleAppsScriptUrl(cloudUrl)) {
-      return fetch(cloudUrl, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      });
+  function postToD1Api(payload, includeAdminPin) {
+    const headers = { "Content-Type": "application/json" };
+    if (includeAdminPin && verifiedAdminPin) {
+      headers["X-Admin-Pin"] = verifiedAdminPin;
     }
-    return fetch(cloudUrl, {
+    return fetch(D1_API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: headers,
       body: JSON.stringify(payload)
+    }).then(function(res) {
+      return res.json().then(function(data) {
+        if (!res.ok || (data && data.ok === false)) {
+          if (res.status === 401) {
+            verifiedAdminPin = "";
+            safeRemoveSession("booster_verified_admin_pin");
+          }
+          throw new Error((data && data.error) || ("HTTP " + res.status));
+        }
+        return data;
+      });
     });
   }
 
-  function sendSaleToCloud(saleRecord) {
-    if (!cloudUrl) return;
+  function sendEditedOrderToD1(oldSale, newSaleRecord, newStockAdjustments) {
+    isSyncing = true;
+    setSyncIndicator("Updating Order...", "syncing");
+    const restockOps = extractSaleStockItems(oldSale).concat(
+      (newStockAdjustments || []).map(function(adj) {
+        return { id: adj.id, name: adj.name, qty: adj.delta };
+      })
+    );
+    postToD1Api({
+      action: "editOrder",
+      orderId: String(oldSale.orderId || ""),
+      restock: restockOps,
+      newEntries: [toD1SaleEntry(newSaleRecord)]
+    }, true).then(function(res) {
+      isSyncing = false;
+      if (res && res.lastUpdated) {
+        lastCloudUpdated = String(res.lastUpdated);
+        safeSetStorage("booster_d1_last_updated", lastCloudUpdated);
+      }
+      updateCloudBadge();
+    }).catch(function(err) {
+      isSyncing = false;
+      alert("Order updated locally, but D1 sync reported: " + err.message);
+      updateCloudBadge();
+    });
+  }
+
+  function sendSaleToCloud(saleRecord, stockAdjustments) {
     isSyncing = true;
     setSyncIndicator("Logging Sale...", "syncing");
 
-    const payload = {
-      action: "recordSale",
-      sale: saleRecord,
-      sales: [saleRecord]
-    };
-    if (hasPulledCloudStock && cloudStockLoadedThisSession) {
-      payload.inventory = getCleanInventoryForCloud();
-      if (!isGoogleAppsScriptUrl(cloudUrl)) {
-        payload.inventoryJson = JSON.stringify(payload.inventory);
-        payload.salesJson = JSON.stringify(salesLog);
-      }
-    }
+    const adjList = Array.isArray(stockAdjustments)
+      ? stockAdjustments
+      : extractSaleStockItems(saleRecord).map(function(r) { return { id: r.id, name: r.name, delta: -r.qty }; });
 
-    postPayloadToCloud(payload).then(function() {
+    postToD1Api({
+      action: "recordSale",
+      entries: [toD1SaleEntry(saleRecord)],
+      stockAdjustments: adjList
+    }, false).then(function(res) {
       isSyncing = false;
+      if (res && res.lastUpdated) {
+        lastCloudUpdated = String(res.lastUpdated);
+        safeSetStorage("booster_d1_last_updated", lastCloudUpdated);
+      }
       updateCloudBadge();
-      setTimeout(function() { pullInventoryFromCloud(true); }, 1800);
     }).catch(function() {
       isSyncing = false;
-      offlineQueue.push(saleRecord);
+      offlineQueue.push({
+        orderId: saleRecord.orderId,
+        saleRecord: saleRecord,
+        stockAdjustments: adjList
+      });
       saveState();
     });
   }
 
   function flushOfflineQueue(silent) {
     pruneVoidedFromOfflineQueue();
-    if (!cloudUrl || offlineQueue.length === 0) {
+    if (offlineQueue.length === 0) {
       updateCloudBadge();
       if (!silent) alert("No pending offline sales to sync.");
       return;
@@ -3377,316 +3503,403 @@
     isSyncing = true;
     setSyncIndicator("Syncing Queue...", "syncing");
 
-    const payload = {
-      action: "recordSale",
-      sales: offlineQueue
-    };
-    if (hasPulledCloudStock && cloudStockLoadedThisSession) {
-      payload.inventory = getCleanInventoryForCloud();
-      if (!isGoogleAppsScriptUrl(cloudUrl)) {
-        payload.inventoryJson = JSON.stringify(payload.inventory);
-        payload.salesJson = JSON.stringify(salesLog);
+    const entries = [];
+    const stockAdjustments = [];
+    offlineQueue.forEach(function(qItem) {
+      const rec = qItem && qItem.saleRecord ? qItem.saleRecord : qItem;
+      if (rec && rec.orderId) {
+        entries.push(toD1SaleEntry(rec));
       }
-    }
+      if (qItem && Array.isArray(qItem.stockAdjustments)) {
+        qItem.stockAdjustments.forEach(function(a) { stockAdjustments.push(a); });
+      } else if (rec) {
+        extractSaleStockItems(rec).forEach(function(r) {
+          stockAdjustments.push({ id: r.id, name: r.name, delta: -r.qty });
+        });
+      }
+    });
 
-    postPayloadToCloud(payload).then(function() {
+    postToD1Api({
+      action: "recordSale",
+      entries: entries,
+      stockAdjustments: stockAdjustments
+    }, false).then(function(res) {
       offlineQueue = [];
       isSyncing = false;
+      if (res && res.lastUpdated) {
+        lastCloudUpdated = String(res.lastUpdated);
+        safeSetStorage("booster_d1_last_updated", lastCloudUpdated);
+      }
       saveState();
-      if (!silent) alert("Queued sales synced to the cloud!");
+      if (!silent) alert("Queued sales synced to Cloudflare D1!");
     }).catch(function() {
       isSyncing = false;
       updateCloudBadge();
     });
+  }
+
+  function buildD1InventoryPayload(sourceList) {
+    return (sourceList || inventory)
+      .filter(function(i) { return i && !isSettingsRow(i); })
+      .map(function(i) {
+        return {
+          id: String(i.id),
+          name: String(i.name || "Unnamed Item"),
+          price: Number(i.price) || 0,
+          stock: parseInt(i.stock, 10) || 0,
+          isPatchDeal: Boolean(i.isPatchDeal),
+          img: (typeof i.image === "string" && i.image) ? i.image : ((typeof i.img === "string" && i.img) ? i.img : getPreloadedImage(i.id, i.name))
+        };
+      });
+  }
+
+  function pushSettingsToCloud(silent) {
+    const doSave = function() {
+      postToD1Api({
+        action: "saveSettings",
+        settings: {
+          sellers: sellersRoster,
+          cashBox: cashBoxConfig
+        }
+      }, true).then(function(res) {
+        if (res && res.lastUpdated) {
+          lastCloudUpdated = String(res.lastUpdated);
+          safeSetStorage("booster_d1_last_updated", lastCloudUpdated);
+        }
+        updateCloudBadge();
+        if (!silent) alert("Settings saved to Cloudflare D1!");
+      }).catch(function(err) {
+        if (!silent) alert("Could not save settings to D1: " + err.message);
+      });
+    };
+    if (verifiedAdminPin) {
+      doSave();
+    } else if (!silent) {
+      ensureAdminPinVerified(doSave);
+    }
   }
 
   function pushInventoryToCloud(silent) {
-    const inputEl = document.getElementById("cloudUrlInput");
-    if (inputEl && inputEl.value.trim()) {
-      cloudUrl = inputEl.value.trim();
-      safeSetStorage("booster_cloud_url", cloudUrl);
-    }
-    if (!cloudUrl) {
-      if (!silent) alert("Paste your Cloud URL first.");
-      return;
-    }
-    if (!hasPulledCloudStock || !cloudStockLoadedThisSession) {
-      pullInventoryFromCloud(true);
-      if (!silent) {
-        alert("Syncing latest cloud data first so recent sales are protected. Please click Force Push again in 2 seconds.");
-      }
-      return;
-    }
-    isSyncing = true;
-    setSyncIndicator("Pushing Stock & Logs...", "syncing");
-
-    // Always recalculate remaining stock from Base Stock minus Logged Sales before pushing!
-    applyBaseStockMath();
-    saveState();
-
-    const cleanInv = getCleanInventoryForCloud();
-    const chronologicalSales = salesLog.slice().reverse();
-    const missingFromSheet = chronologicalSales.filter(function(s) {
-      return s && s.orderId && !lastKnownSheetOrderIds.has(String(s.orderId));
-    });
-
-    // If the Google Sheet is missing sales that are in our local log (e.g. from the previous script URL),
-    // send action: "recordSale" first so the Google Sheet writes every missing sale row to the Sales tab,
-    // AND then send action: "syncInventory" to update the Inventory tab!
-    const syncInvPayload = {
-      action: "syncInventory",
-      inventory: cleanInv,
-      sales: chronologicalSales
+    const executePush = function() {
+      isSyncing = true;
+      setSyncIndicator("Saving Stock to D1...", "syncing");
+      postToD1Api({
+        action: "saveInventory",
+        inventory: buildD1InventoryPayload(inventory)
+      }, true).then(function(res) {
+        isSyncing = false;
+        inventoryDirty = false;
+        hasPulledCloudStock = true;
+        cloudStockLoadedThisSession = true;
+        if (res && res.lastUpdated) {
+          lastCloudUpdated = String(res.lastUpdated);
+          safeSetStorage("booster_d1_last_updated", lastCloudUpdated);
+        }
+        updateCloudBadge();
+        renderGrid();
+        if (isInventoryModalOpen()) renderInventoryTable();
+        if (!silent) alert("Success! Inventory, prices, stock, and photos saved to Cloudflare D1.");
+      }).catch(function(err) {
+        isSyncing = false;
+        setSyncIndicator("Offline (Saved Locally)", "offline");
+        if (!silent) alert("Failed to push inventory to D1: " + err.message);
+      });
     };
 
-    let chain = Promise.resolve();
-    if (missingFromSheet.length > 0 && !silent) {
-      chain = postPayloadToCloud({
-        action: "recordSale",
-        sale: missingFromSheet[0],
-        sales: missingFromSheet,
-        inventory: cleanInv
-      });
+    if (verifiedAdminPin) {
+      executePush();
+    } else if (!silent) {
+      ensureAdminPinVerified(executePush);
     }
-
-    chain.then(function() {
-      return postPayloadToCloud(syncInvPayload);
-    }).then(function() {
-      missingFromSheet.forEach(function(s) {
-        if (s && s.orderId) lastKnownSheetOrderIds.add(String(s.orderId));
-      });
-      isSyncing = false;
-      inventoryDirty = false;
-      hasPulledCloudStock = true;
-      cloudStockLoadedThisSession = true;
-      updateCloudBadge();
-      renderGrid();
-      if (isInventoryModalOpen()) renderInventoryTable();
-      if (!silent) alert("Success! Pushed updated stock (Spinner Coin: " + (inventory.find(function(i){return /spinner/i.test(i.name);}) || {}).stock + ") and synced all " + salesLog.length + " sales orders to your Google Sheet!");
-    }).catch(function() {
-      isSyncing = false;
-      setSyncIndicator("Offline (Saved Locally)", "offline");
-    });
   }
 
-  function mergeCloudSalesWithLocal(cloudSales) {
-    if (!Array.isArray(cloudSales)) return;
-    const voidSet = new Set(voidedOrderIds.map(String));
+  function mergeD1SalesWithLocalQueue(d1SalesAsc) {
+    const voidSet = new Set((voidedOrderIds || []).map(String));
     if (editingSaleBackup && editingSaleBackup.sale && editingSaleBackup.sale.orderId) {
       voidSet.add(String(editingSaleBackup.sale.orderId));
     }
-    const filteredCloud = cloudSales
-      .filter(function(s) { return s && !voidSet.has(String(s.orderId || "")); })
-      .map(function(s) {
-        s.directorate = cleanDirectorateValue(s.directorate);
-        if (s.itemQuantities && typeof s.itemQuantities === "object") {
-          Object.keys(s.itemQuantities).forEach(function(k) {
-            if (isSettingsItemName(k)) delete s.itemQuantities[k];
-          });
-        }
-        return s;
-      });
-    const cloudOrderIds = new Set(filteredCloud.map(function(s) { return String(s.orderId || ""); }));
-    const unsyncedLocal = salesLog.filter(function(loc) {
-      return loc && loc.orderId && !cloudOrderIds.has(String(loc.orderId)) && !voidSet.has(String(loc.orderId));
-    });
-    salesLog = unsyncedLocal.concat(filteredCloud);
-    syncSellersFromSalesLog();
-  }
+    // D1 returns rows in rowid ASC (oldest-first); reverse so newest orders appear at the top
+    const normalizedCloud = (Array.isArray(d1SalesAsc) ? d1SalesAsc.slice().reverse() : [])
+      .map(normalizeD1SaleForUI)
+      .filter(function(s) { return s && s.orderId && !voidSet.has(String(s.orderId)); });
 
-  // One-time automatic rescue of any sales sitting on the previous Google Apps Script URL
-  function rescueLegacyCloudSalesOnce() {
-    if (!LEGACY_CLOUD_URL || LEGACY_CLOUD_URL === cloudUrl || window._legacyRescueChecked) {
-      return Promise.resolve();
-    }
-    window._legacyRescueChecked = true;
-    const sep = LEGACY_CLOUD_URL.indexOf("?") !== -1 ? "&" : "?";
-    return fetch(LEGACY_CLOUD_URL + sep + "t=" + Date.now())
-      .then(function(res) { return res.ok ? res.json().catch(function() { return {}; }) : {}; })
-      .then(function(legacyData) {
-        if (legacyData && Array.isArray(legacyData.sales) && legacyData.sales.length > 0) {
-          mergeCloudSalesWithLocal(legacyData.sales);
-        }
+    const cloudIds = new Set(normalizedCloud.map(function(s) { return String(s.orderId); }));
+    const queuedIds = new Set(
+      (offlineQueue || []).map(function(q) {
+        const rec = q && q.saleRecord ? q.saleRecord : q;
+        return String((rec && rec.orderId) || "");
       })
-      .catch(function() {});
+    );
+    const pendingLocal = salesLog.filter(function(loc) {
+      return loc && loc.orderId && queuedIds.has(String(loc.orderId)) && !cloudIds.has(String(loc.orderId)) && !voidSet.has(String(loc.orderId));
+    });
+    salesLog = pendingLocal.concat(normalizedCloud);
   }
 
   function pullInventoryFromCloud(silent) {
-    if (!cloudUrl) return;
-    if (silent && (isInventoryModalOpen() || editingSaleBackup !== null)) return;
+    if (silent && (isInventoryModalOpen() || editingSaleBackup !== null || isSyncing)) return;
     pruneVoidedFromOfflineQueue();
     if (!silent && offlineQueue.length > 0) {
       flushOfflineQueue(true);
     }
 
-    isSyncing = true;
-    setSyncIndicator("Syncing Cloud...", "syncing");
-
-    let fetchPromise;
-    if (isGoogleAppsScriptUrl(cloudUrl)) {
-      const cacheBusterUrl = cloudUrl + (cloudUrl.indexOf("?") !== -1 ? "&" : "?") + "t=" + Date.now();
-      fetchPromise = fetch(cacheBusterUrl);
-    } else {
-      fetchPromise = fetch(cloudUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "pull", t: Date.now() })
-      });
+    if (!silent) {
+      isSyncing = true;
+      setSyncIndicator("Syncing D1...", "syncing");
     }
 
-    fetchPromise
+    const queryUrl = silent && lastCloudUpdated
+      ? (D1_API_URL + "?since=" + encodeURIComponent(lastCloudUpdated))
+      : (D1_API_URL + "?t=" + Date.now());
+
+    fetch(queryUrl, { cache: "no-store" })
       .then(function(res) {
-        if (!res.ok) return {};
-        return res.json().catch(function() { return {}; });
-      })
-      .then(function(data) {
-        return rescueLegacyCloudSalesOnce().then(function() { return data; });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
       })
       .then(function(data) {
         isSyncing = false;
-
-        if (data && typeof data.inventoryJson === "string" && data.inventoryJson) {
-          try { data.inventory = JSON.parse(data.inventoryJson); } catch (e) {}
-        }
-        if (data && typeof data.salesJson === "string" && data.salesJson) {
-          try { data.sales = JSON.parse(data.salesJson); } catch (e) {}
+        if (!data || !data.ok) {
+          updateCloudBadge();
+          return;
         }
 
-        if (data && Array.isArray(data.sales)) {
-          lastKnownSheetOrderIds = new Set(data.sales.map(function(s) { return String((s && s.orderId) || ""); }));
-          mergeCloudSalesWithLocal(data.sales);
-        }
-
-        if (data && Array.isArray(data.inventory) && data.inventory.length > 0) {
-          const settingsRow = data.inventory.find(function(ci) {
-            return isSettingsRow(ci);
-          });
-          if (settingsRow) {
-            let rawSettingsJson = "";
-            const rowName = String(settingsRow.name || "").trim();
-            if (typeof settingsRow.image === "string" && settingsRow.image.trim().indexOf("{") === 0) {
-              rawSettingsJson = settingsRow.image.trim();
-            } else if (rowName.indexOf(SETTINGS_ROW_NAME + ":") === 0) {
-              rawSettingsJson = rowName.slice((SETTINGS_ROW_NAME + ":").length).trim();
-            }
-            if (rawSettingsJson) {
-              try {
-                const parsedSettings = JSON.parse(rawSettingsJson);
-                if (Array.isArray(parsedSettings.sellers) && parsedSettings.sellers.length > 0) {
-                  const isOldPlaceholder = parsedSettings.sellers.length === 2 &&
-                    parsedSettings.sellers[0] === "Booster Member 1" &&
-                    parsedSettings.sellers[1] === "Booster Member 2";
-                  if (!isOldPlaceholder) {
-                    sellersRoster = parsedSettings.sellers;
-                    safeSetStorage("booster_sellers_roster", JSON.stringify(sellersRoster));
-                  }
-                }
-                if (parsedSettings.pin && /^\d{4}$/.test(String(parsedSettings.pin).trim())) {
-                  appPin = String(parsedSettings.pin).trim();
-                  safeSetStorage("booster_app_pin", appPin);
-                }
-                if (parsedSettings.baseStocks && typeof parsedSettings.baseStocks === "object") {
-                  baseStockMap = Object.assign({}, baseStockMap, parsedSettings.baseStocks);
-                  safeSetStorage("booster_base_stock_map", JSON.stringify(baseStockMap));
-                }
-                if (Array.isArray(parsedSettings.voidedOrders)) {
-                  parsedSettings.voidedOrders.forEach(function(vid) {
-                    if (vid && voidedOrderIds.indexOf(String(vid)) === -1) {
-                      voidedOrderIds.push(String(vid));
-                    }
-                  });
-                  safeSetStorage("booster_voided_orders", JSON.stringify(voidedOrderIds));
-                  if (data && Array.isArray(data.sales)) {
-                    mergeCloudSalesWithLocal(data.sales);
-                  }
-                }
-                if (parsedSettings.cashBox && typeof parsedSettings.cashBox === "object") {
-                  cashBoxConfig = {
-                    startingCash: parseFloat(parsedSettings.cashBox.startingCash) || 0,
-                    baselineSalesCash: parseFloat(parsedSettings.cashBox.baselineSalesCash) || 0,
-                    lastUpdated: parsedSettings.cashBox.lastUpdated || "",
-                    history: Array.isArray(parsedSettings.cashBox.history) ? parsedSettings.cashBox.history : (cashBoxConfig.history || [])
-                  };
-                  safeSetStorage("booster_cashbox_config", JSON.stringify(cashBoxConfig));
-                }
-              } catch (settingsErr) {}
-            }
+        // ZERO SCROLL JUMP: If nothing changed in D1 since our last check, do NOT touch the DOM!
+        if (data.unchanged) {
+          if (!cloudStockLoadedThisSession) {
+            cloudStockLoadedThisSession = true;
+            renderGrid();
           }
+          updateCloudBadge();
+          return;
+        }
 
-          const realCloudItems = data.inventory.filter(function(ci) {
-            return ci && !isSettingsRow(ci);
-          });
+        if (data.lastUpdated !== undefined) {
+          lastCloudUpdated = String(data.lastUpdated);
+          safeSetStorage("booster_d1_last_updated", lastCloudUpdated);
+        }
 
-          let cloudMissingPhotos = false;
-          const merged = realCloudItems.map(function(cloudItem) {
-            const cName = String(cloudItem.name || "");
-            const localMatch = inventory.find(function(loc) {
-              return loc.id == cloudItem.id || String(loc.name).toLowerCase() === cName.toLowerCase();
-            });
-            const cloudImg = (typeof cloudItem.image === "string" && cloudItem.image.indexOf("data:image") === 0) ? cloudItem.image : "";
-            const fallbackImg = (localMatch && localMatch.image) ? localMatch.image : getPreloadedImage(cloudItem.id, cName);
-            if (!cloudImg && fallbackImg) {
-              cloudMissingPhotos = true;
+        if (Array.isArray(data.voidedOrderIds)) {
+          data.voidedOrderIds.forEach(function(vid) {
+            if (vid && voidedOrderIds.indexOf(String(vid)) === -1) {
+              voidedOrderIds.push(String(vid));
             }
+          });
+        }
+
+        if (data.settings && typeof data.settings === "object") {
+          if (Array.isArray(data.settings.sellers) && data.settings.sellers.length > 0) {
+            sellersRoster = data.settings.sellers;
+          }
+          if (data.settings.cashBox && typeof data.settings.cashBox === "object") {
+            cashBoxConfig = {
+              startingCash: parseFloat(data.settings.cashBox.startingCash) || 0,
+              baselineSalesCash: parseFloat(data.settings.cashBox.baselineSalesCash) || 0,
+              lastUpdated: data.settings.cashBox.lastUpdated || "",
+              history: Array.isArray(data.settings.cashBox.history) ? data.settings.cashBox.history : []
+            };
+          }
+        }
+
+        const dbIsUninitialized = String(data.lastUpdated || "0") === "0" &&
+          (!Array.isArray(data.inventory) || data.inventory.length === 0) &&
+          (!Array.isArray(data.sales) || data.sales.length === 0);
+
+        if (!dbIsUninitialized && Array.isArray(data.sales)) {
+          mergeD1SalesWithLocalQueue(data.sales);
+        }
+
+        if (Array.isArray(data.inventory) && data.inventory.length > 0) {
+          const mergedInv = data.inventory.map(function(ci) {
+            const cName = String(ci.name || "");
+            const localMatch = inventory.find(function(loc) {
+              return loc.id == ci.id || String(loc.name).toLowerCase() === cName.toLowerCase();
+            });
+            const d1Img = (typeof ci.img === "string" && ci.img) ? ci.img : ((typeof ci.image === "string" && ci.image) ? ci.image : "");
+            const fallbackImg = (localMatch && localMatch.image) ? localMatch.image : getPreloadedImage(ci.id, cName);
             return {
-              id: cloudItem.id || Date.now() + Math.random(),
+              id: ci.id,
               name: cName,
-              price: parseFloat(cloudItem.price) || 0,
-              isPatchDeal: Boolean(cloudItem.isPatchDeal),
-              stock: parseInt(cloudItem.stock, 10) || 0,
-              image: cloudImg || fallbackImg
+              price: parseFloat(ci.price) || 0,
+              isPatchDeal: Boolean(ci.isPatchDeal),
+              stock: parseInt(ci.stock, 10) || 0,
+              image: d1Img || fallbackImg
             };
           });
-          hasPulledCloudStock = true;
-          cloudStockLoadedThisSession = true;
-          inventory = sanitizeInventory(merged);
-          applyBaseStockMath();
-          saveState();
-          updateSellerUI();
-          renderGrid();
-          renderCart();
-          if (isInventoryModalOpen()) renderInventoryTable();
-          if (isLogsModalOpen()) renderSalesLogTable();
-          if (cloudMissingPhotos && !isGoogleAppsScriptUrl(cloudUrl) && !window._hasAutoSeededPhotos) {
-            window._hasAutoSeededPhotos = true;
-            pushInventoryToCloud(true);
+          inventory = sanitizeInventory(mergedInv);
+        }
+
+        hasPulledCloudStock = true;
+        cloudStockLoadedThisSession = true;
+        saveState();
+        updateSellerUI();
+        renderGrid();
+        renderCart();
+        if (isInventoryModalOpen()) renderInventoryTable();
+        if (isLogsModalOpen()) renderSalesLogTable();
+
+        if (!silent) {
+          if (dbIsUninitialized) {
+            alert("Connected to Cloudflare D1! Your D1 database is currently empty — open Cloud Settings (or Inventory & Sellers) and click 'Migrate All Data to Cloudflare D1' to import your past sales and stock.");
+          } else {
+            alert("Synced with Cloudflare D1! Loaded " + inventory.length + " items and " + salesLog.length + " orders.");
           }
-          if (!silent) alert("Synced! Latest inventory, photos, and cloud sales logs are loaded.");
-        } else {
-          hasPulledCloudStock = true;
-          cloudStockLoadedThisSession = true;
-          applyBaseStockMath();
-          saveState();
-          updateSellerUI();
-          renderGrid();
-          if (isInventoryModalOpen()) renderInventoryTable();
-          if (isLogsModalOpen()) renderSalesLogTable();
-          if (!silent) alert("Connected to Cloud! Click 'Force Push This Device\'s Stock' once to initialize your new Google Sheet.");
         }
         updateCloudBadge();
       })
       .catch(function() {
         isSyncing = false;
-        if (hasPulledCloudStock) {
-          cloudStockLoadedThisSession = true;
-          renderGrid();
-          if (isInventoryModalOpen()) renderInventoryTable();
-        }
+        cloudStockLoadedThisSession = true;
+        renderGrid();
         setSyncIndicator("Offline Mode", "offline");
       });
   }
 
-  function saveAndTestCloudUrl() {
-    const val = document.getElementById("cloudUrlInput").value.trim();
-    if (!val) {
-      cloudUrl = "";
-      safeRemoveStorage("booster_cloud_url");
-      saveState();
-      return;
-    }
-    cloudUrl = val;
-    saveState();
-    pullInventoryFromCloud(false);
+  function migrateLegacyDataToD1() {
+    ensureAdminPinVerified(function() {
+      const urlInput = document.getElementById("legacySheetUrlInput");
+      const gasUrl = (urlInput && urlInput.value.trim()) ? urlInput.value.trim() : LEGACY_GAS_URL_FOR_MIGRATION;
+
+      isSyncing = true;
+      setSyncIndicator("Migrating to D1...", "syncing");
+
+      const fetchSheetUrl = function(u) {
+        if (!u) return Promise.resolve(null);
+        const sep = u.indexOf("?") !== -1 ? "&" : "?";
+        return fetch(u + sep + "t=" + Date.now())
+          .then(function(r) { return r.ok ? r.json().catch(function() { return null; }) : null; })
+          .catch(function() { return null; });
+      };
+
+      Promise.all([
+        fetchSheetUrl(gasUrl),
+        (LEGACY_CLOUD_URL && LEGACY_CLOUD_URL !== gasUrl) ? fetchSheetUrl(LEGACY_CLOUD_URL) : Promise.resolve(null)
+      ]).then(function(results) {
+        const primarySheet = results[0];
+        const olderSheet = results[1];
+
+        let migInventory = JSON.parse(JSON.stringify(inventory));
+        let migSellers = sellersRoster.slice();
+        let migVoided = voidedOrderIds.slice();
+        let migCashBox = JSON.parse(JSON.stringify(cashBoxConfig));
+        let migBaseStocks = Object.assign({}, baseStockMap);
+
+        // Extract settings + inventory from Google Sheet if reachable
+        if (primarySheet && Array.isArray(primarySheet.inventory) && primarySheet.inventory.length > 0) {
+          const settingsRow = primarySheet.inventory.find(function(ci) { return isSettingsRow(ci); });
+          if (settingsRow) {
+            let rawJson = "";
+            const rName = String(settingsRow.name || "").trim();
+            if (typeof settingsRow.image === "string" && settingsRow.image.trim().indexOf("{") === 0) {
+              rawJson = settingsRow.image.trim();
+            } else if (rName.indexOf(SETTINGS_ROW_NAME + ":") === 0) {
+              rawJson = rName.slice((SETTINGS_ROW_NAME + ":").length).trim();
+            }
+            if (rawJson) {
+              try {
+                const ps = JSON.parse(rawJson);
+                if (Array.isArray(ps.sellers) && ps.sellers.length > 0) migSellers = ps.sellers;
+                if (ps.baseStocks && typeof ps.baseStocks === "object") migBaseStocks = Object.assign(migBaseStocks, ps.baseStocks);
+                if (Array.isArray(ps.voidedOrders)) {
+                  ps.voidedOrders.forEach(function(v) {
+                    if (v && migVoided.indexOf(String(v)) === -1) migVoided.push(String(v));
+                  });
+                }
+                if (ps.cashBox && typeof ps.cashBox === "object") {
+                  migCashBox = {
+                    startingCash: parseFloat(ps.cashBox.startingCash) || 0,
+                    baselineSalesCash: parseFloat(ps.cashBox.baselineSalesCash) || 0,
+                    lastUpdated: ps.cashBox.lastUpdated || migCashBox.lastUpdated || "",
+                    history: Array.isArray(ps.cashBox.history) ? ps.cashBox.history : (migCashBox.history || [])
+                  };
+                }
+              } catch (_) {}
+            }
+          }
+
+          const sheetItems = primarySheet.inventory.filter(function(ci) { return ci && !isSettingsRow(ci); });
+          if (sheetItems.length > 0) {
+            migInventory = sanitizeInventory(sheetItems.map(function(ci) {
+              const cName = String(ci.name || "");
+              const loc = inventory.find(function(l) { return l.id == ci.id || String(l.name).toLowerCase() === cName.toLowerCase(); });
+              const cImg = (typeof ci.image === "string" && ci.image.indexOf("data:image") === 0) ? ci.image : "";
+              const fbImg = (loc && loc.image) ? loc.image : getPreloadedImage(ci.id, cName);
+              return {
+                id: ci.id || Date.now() + Math.random(),
+                name: cName,
+                price: parseFloat(ci.price) || 0,
+                isPatchDeal: Boolean(ci.isPatchDeal),
+                stock: parseInt(ci.stock, 10) || 0,
+                image: cImg || fbImg
+              };
+            }));
+          }
+        }
+
+        // Merge sales from local cache + Google Sheet + Legacy rescue Sheet without duplicates
+        const byOrderId = new Map();
+        const addSalesList = function(list) {
+          if (!Array.isArray(list)) return;
+          list.forEach(function(rawSale) {
+            const norm = normalizeD1SaleForUI(rawSale);
+            if (norm && norm.orderId && !byOrderId.has(String(norm.orderId))) {
+              byOrderId.set(String(norm.orderId), norm);
+            }
+          });
+        };
+        if (primarySheet && Array.isArray(primarySheet.sales)) addSalesList(primarySheet.sales);
+        if (olderSheet && Array.isArray(olderSheet.sales)) addSalesList(olderSheet.sales);
+        addSalesList(salesLog);
+
+        // Chronological order (oldest-first) for clean D1 insertion
+        const mergedChronologicalSales = Array.from(byOrderId.values()).reverse().map(toD1SaleEntry);
+        const d1InvPayload = buildD1InventoryPayload(migInventory);
+
+        const sheetNote = primarySheet && Array.isArray(primarySheet.sales)
+          ? ("Pulled live from Google Sheets + Local Cache")
+          : ("Using Local Browser Cache (Google Sheets URL was unreachable or blocked on this network)");
+
+        if (!confirm(
+          "READY TO MIGRATE TO CLOUDFLARE D1\n\n" +
+          "Source: " + sheetNote + "\n" +
+          "• Inventory Items: " + d1InvPayload.length + " (with photos & stock)\n" +
+          "• Sales Orders: " + mergedChronologicalSales.length + "\n" +
+          "• Sellers in Roster: " + migSellers.length + "\n\n" +
+          "Click OK to import everything into Cloudflare D1 now."
+        )) {
+          isSyncing = false;
+          updateCloudBadge();
+          return;
+        }
+
+        return postToD1Api({
+          action: "migrateFromLegacy",
+          inventory: d1InvPayload,
+          sales: mergedChronologicalSales,
+          voidedOrderIds: migVoided,
+          settings: {
+            sellers: migSellers,
+            cashBox: migCashBox,
+            baseStocks: migBaseStocks
+          }
+        }, true).then(function(res) {
+          isSyncing = false;
+          lastCloudUpdated = "";
+          safeRemoveStorage("booster_d1_last_updated");
+          alert(
+            "Migration Complete!\n\n" +
+            "• Imported Inventory Items: " + (res.migratedInventory || d1InvPayload.length) + "\n" +
+            "• Imported Sales Orders: " + (res.migratedSales || mergedChronologicalSales.length) + "\n\n" +
+            "Your POS is now running 100% on Cloudflare D1!"
+          );
+          pullInventoryFromCloud(true);
+        });
+      }).catch(function(err) {
+        isSyncing = false;
+        updateCloudBadge();
+        alert("Migration error: " + err.message);
+      });
+    });
   }
 
   function recalculateStockFromSalesLog() {
@@ -3735,10 +3948,12 @@
   }
 
   function openInventoryModal() {
-    inventoryDirty = false;
-    renderInventoryTable();
-    renderSellerRosterChips();
-    document.getElementById("invModal").style.display = "flex";
+    ensureAdminPinVerified(function() {
+      inventoryDirty = false;
+      renderInventoryTable();
+      renderSellerRosterChips();
+      document.getElementById("invModal").style.display = "flex";
+    });
   }
 
   function closeInventoryModal() {
@@ -4185,9 +4400,8 @@
 
   function openLogsModal() {
     try {
-      document.getElementById("cloudUrlInput").value = cloudUrl || "";
       renderSalesLogTable();
-      if (cloudUrl) pullInventoryFromCloud(true);
+      pullInventoryFromCloud(true);
     } catch (e) {
       console.warn("Log render error:", e);
     }
@@ -4331,9 +4545,17 @@
   }
 
   function renderSalesLogTable() {
+    const logsModalEl = document.getElementById("logsModal");
+    const logsModalBody = logsModalEl ? logsModalEl.querySelector(".modal-body") : null;
+    const savedModalScrollTop = logsModalBody ? logsModalBody.scrollTop : 0;
     const thead = document.getElementById("salesLogHead");
     const tbody = document.getElementById("salesLogBody");
     const tableWrapper = document.getElementById("salesTableWrapper");
+    const savedWrapperScrollLeft = tableWrapper ? tableWrapper.scrollLeft : 0;
+    const restoreLogScroll = function() {
+      if (logsModalBody) logsModalBody.scrollTop = savedModalScrollTop;
+      if (tableWrapper) tableWrapper.scrollLeft = savedWrapperScrollLeft;
+    };
     const breakdownContainer = document.getElementById("breakdownContainer");
     const filteredSales = getFilteredSalesLog();
 
@@ -4391,6 +4613,7 @@
       tableWrapper.style.display = "none";
       breakdownContainer.style.display = "block";
       renderBreakdownView(filteredSales);
+      restoreLogScroll();
       return;
     }
 
@@ -4464,6 +4687,7 @@
       });
       totalTr.innerHTML = totHTML;
       tbody.appendChild(totalTr);
+      restoreLogScroll();
       return;
     }
 
@@ -4533,6 +4757,7 @@
         '</td>';
       tbody.appendChild(tr);
     });
+    restoreLogScroll();
   }
 
   function downloadFile(filename, content, mimeType) {
@@ -4870,30 +5095,23 @@
       /const defaultSellers = \[[\s\S]*?\];/,
       function() { return "const defaultSellers = " + updatedSellersJSON + ";"; }
     );
-    updatedHTML = updatedHTML.replace(
-      /const DEFAULT_APP_PIN = "[^"]*";/,
-      function() { return 'const DEFAULT_APP_PIN = "' + appPin + '";'; }
-    );
-    if (cloudUrl) {
-      updatedHTML = updatedHTML.replace(
-        /const DEFAULT_CLOUD_URL = "[^"]*";/,
-        function() { return 'const DEFAULT_CLOUD_URL = "' + cloudUrl + '";'; }
-      );
-    }
     downloadFile("index.html", updatedHTML, "text/html");
   }
 
   function clearSalesHistory() {
-    if (confirm("Clear local sales cache on this device? (Sales saved in your Google Sheet will automatically pull back down on the next sync)")) {
+    if (confirm("Clear local cache on this device and re-sync fresh logs from Cloudflare D1?")) {
       salesLog = [];
       totalSalesToday = 0;
+      lastCloudUpdated = "";
+      safeRemoveStorage("booster_d1_last_updated");
       saveState();
       renderSalesLogTable();
+      pullInventoryFromCloud(true);
     }
   }
 
   function factoryResetApp() {
-    if (confirm("Reset local browser cache and re-sync fresh stock, photos & logs from the cloud? (Your cloud inventory will NOT be overwritten)")) {
+    if (confirm("Reset local browser cache and re-sync fresh stock, photos & logs from Cloudflare D1? (Your D1 database will NOT be overwritten)")) {
       safeRemoveStorage("booster_inventory");
       safeRemoveStorage("booster_base_stock_map");
       safeRemoveStorage("booster_sellers_roster");
@@ -4901,7 +5119,7 @@
       safeRemoveStorage("booster_sales_log");
       safeRemoveStorage("booster_offline_queue");
       safeRemoveStorage("booster_has_cloud_stock");
-      if (DEFAULT_CLOUD_URL) safeSetStorage("booster_cloud_url", DEFAULT_CLOUD_URL);
+      safeRemoveStorage("booster_d1_last_updated");
       location.reload();
     }
   }
