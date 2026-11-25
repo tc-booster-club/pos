@@ -1758,19 +1758,18 @@
     <div class="modal-body">
       <div class="cloud-config-box" id="cloudConfigBox">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-          <strong style="font-size:0.88rem; color:var(--primary);">&#9729; Cloudflare D1 SQLite Database (<code>/api</code> &bull; NIPR-Safe Same-Domain Sync)</strong>
+          <strong style="font-size:0.88rem; color:var(--primary);">&#9729; Cloudflare D1 SQLite Database (<code>boosterclub-merch-app.pages.dev/api</code> &bull; Encrypted PIN Protected)</strong>
           <div style="display:flex; gap:6px; flex-wrap:wrap;">
             <button type="button" class="btn-action" onclick="pushInventoryToCloud(false)">Force Push Inventory to D1</button>
             <button type="button" class="btn-del" onclick="clearSalesHistory()">Clear Local Cache &amp; Re-Sync</button>
           </div>
         </div>
         <div style="border-top:1px solid #bfdbfe; padding-top:8px; margin-top:6px;">
-          <span style="font-size:0.78rem; font-weight:700; color:#1e3a8a; display:block; margin-bottom:4px;">One-Time Migration: Import Past Sales, Stock, Photos &amp; Cash Box from Google Sheets / Local Storage into D1</span>
+          <span style="font-size:0.78rem; font-weight:700; color:#1e3a8a; display:block; margin-bottom:4px;">Optional Legacy Import: Paste an Apps Script URL (if ever needed) to import into D1</span>
           <div class="cloud-url-row">
-            <input type="text" id="legacySheetUrlInput" value="https://script.google.com/macros/s/AKfycbyEGbiHjh0CXwfSlivzGcJG-CSkJVECy-z-qEw3jAG8J0Z1jqnuwMQAosgyTooVBw7w/exec" placeholder="Optional: Old Google Apps Script /exec URL to pull past history from">
-            <button type="button" class="btn-action green" onclick="migrateLegacyDataToD1()">&#128230; Migrate All Data to Cloudflare D1</button>
+            <input type="text" id="legacySheetUrlInput" value="" autocomplete="off" placeholder="Optional: Paste legacy Google Apps Script /exec URL here">
+            <button type="button" class="btn-action green" onclick="migrateLegacyDataToD1()">&#128230; Migrate Data to Cloudflare D1</button>
           </div>
-          <small style="display:block; margin-top:4px; font-size:0.72rem; color:var(--muted);">Tip: If USTRANSCOM NIPR blocks <code>script.google.com</code>, tap this button once on a personal phone/laptop to pull directly from Google Sheets into D1—then refresh here on NIPR!</small>
         </div>
         <div style="border-top:1px solid #bfdbfe; padding-top:8px; margin-top:8px;">
           <span style="font-size:0.78rem; font-weight:700; color:#5b21b6; display:block; margin-bottom:4px;">&#128179; Zeffy Kiosk &amp; Phone QR Form URL (Synced to all devices via D1)</span>
@@ -2012,9 +2011,9 @@
 </div>
 
 <script>
-  // CLOUDFLARE D1 SAME-DOMAIN API ENDPOINT (No hardcoded PINs or Google Sheets polling!):
-  const D1_API_URL = "/api";
-  const LEGACY_GAS_URL_FOR_MIGRATION = "https://script.google.com/macros/s/AKfycbyEGbiHjh0CXwfSlivzGcJG-CSkJVECy-z-qEw3jAG8J0Z1jqnuwMQAosgyTooVBw7w/exec";
+  // CLOUDFLARE D1 API ENDPOINT (Works seamlessly from both *.github.io and *.pages.dev; zero hardcoded secrets!):
+  const D1_API_URL = "https://boosterclub-merch-app.pages.dev/api";
+  const LEGACY_GAS_URL_FOR_MIGRATION = "";
 
   // DEFAULT BOOSTER CLUB SELLERS ROSTER (Manage inside 'Inventory & Sellers' modal):
   const defaultSellers = ["TSgt Vaidya", "MSgt Dunn"];
@@ -2154,7 +2153,7 @@
   }
 
   const SETTINGS_ROW_NAME = "__BOOSTER_SETTINGS__";
-  const LEGACY_CLOUD_URL = "https://script.google.com/macros/s/AKfycbzFd6y6SsmrIp0MotfAe6auIwW-ek3023ydixUCY6ezQoB3d43JSbOHYvk4K_ef8TFPBA/exec";
+  const LEGACY_CLOUD_URL = "";
 
   function isSettingsItemName(name) {
     const n = String(name || "").trim();
@@ -4769,13 +4768,13 @@
 
   function postToD1Api(payload, includeAdminPin) {
     const headers = { "Content-Type": "application/json" };
-    if (includeAdminPin && verifiedAdminPin) {
-      headers["X-Admin-Pin"] = verifiedAdminPin;
-    }
+    const bodyObj = (includeAdminPin && verifiedAdminPin)
+      ? Object.assign({}, payload, { adminPin: verifiedAdminPin })
+      : payload;
     return fetch(D1_API_URL, {
       method: "POST",
       headers: headers,
-      body: JSON.stringify(payload)
+      body: JSON.stringify(bodyObj)
     }).then(function(res) {
       return res.json().then(function(data) {
         if (!res.ok || (data && data.ok === false)) {
