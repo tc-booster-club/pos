@@ -2,12 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Booster Club POS &amp; Cloud Log Viewer</title>
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Booster POS">
-  <meta name="mobile-web-app-capable" content="yes">
   <style>
     :root {
       --primary: #1e3a8a;
@@ -26,13 +22,6 @@
     }
     button {
       touch-action: manipulation;
-    }
-    input, textarea, select {
-      touch-action: auto !important;
-      user-select: text !important;
-      -webkit-user-select: text !important;
-      pointer-events: auto !important;
-      cursor: text;
     }
     body {
       margin: 0;
@@ -319,7 +308,7 @@
       border-radius: 8px;
       border: 1px solid #bfdbfe;
     }
-    .customer-field { display: flex; flex-direction: column; gap: 3px; }
+    .customer-field { display: flex; flex-direction: column; gap: 3px; position: relative; }
     .customer-field label { font-size: 0.7rem; font-weight: 700; color: var(--primary); text-transform: uppercase; }
     .customer-field input {
       padding: 7px 8px;
@@ -329,7 +318,58 @@
       border-radius: 6px;
       width: 100%;
       background: white;
+      color: var(--text);
     }
+    .customer-field input:focus {
+      outline: none;
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.18);
+    }
+    .dir-input-wrap {
+      display: flex;
+      align-items: stretch;
+      gap: 4px;
+    }
+    .btn-dir-pick {
+      background: #dbeafe;
+      color: var(--primary);
+      border: 1px solid #93c5fd;
+      border-radius: 6px;
+      padding: 0 8px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .btn-dir-pick:hover { background: #bfdbfe; }
+    .dir-quick-tray {
+      display: none;
+      grid-column: 1 / -1;
+      background: #ffffff;
+      border: 2px solid var(--primary-light);
+      border-radius: 8px;
+      padding: 8px;
+      margin-top: 2px;
+      box-shadow: 0 4px 12px rgba(15,23,42,0.12);
+    }
+    .dir-quick-tray.open { display: block; }
+    .dir-quick-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+    .dir-chip-btn {
+      background: #eff6ff;
+      color: var(--primary);
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      padding: 6px 4px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: center;
+    }
+    .dir-chip-btn:hover { background: #dbeafe; border-color: var(--primary-light); }
 
     .total-line { display: flex; justify-content: space-between; font-size: 1.25rem; font-weight: 800; margin-bottom: 8px; }
 
@@ -1486,32 +1526,41 @@
     </div>
 
     <div class="checkout-box">
-      <div class="customer-box">
+      <div class="customer-box" id="customerBoxContainer">
         <div class="customer-field">
           <label for="buyerName">Buyer Name</label>
-          <input type="text" id="buyerName" placeholder="Walk-up (or enter name)">
+          <input type="text" id="buyerName" autocomplete="off" spellcheck="false" onclick="this.focus();" placeholder="Walk-up (or enter name)">
         </div>
         <div class="customer-field">
           <label for="buyerDirectorate">Directorate</label>
-          <input type="text" id="buyerDirectorate" list="dirSuggestions" placeholder="Tap to pick or type">
-          <datalist id="dirSuggestions">
-            <option value="TCJ1"></option>
-            <option value="TCJ2"></option>
-            <option value="TCJ3"></option>
-            <option value="TCJ4"></option>
-            <option value="TCJ5"></option>
-            <option value="TCJ5-4"></option>
-            <option value="TCJ457"></option>
-            <option value="TCJ6"></option>
-            <option value="TCJ8"></option>
-            <option value="TCCC"></option>
-            <option value="TCCS"></option>
-            <option value="TCSG"></option>
-            <option value="TCPA"></option>
-            <option value="TCAQ"></option>
-            <option value="TACC"></option>
-            <option value="Command Staff"></option>
-          </datalist>
+          <div class="dir-input-wrap">
+            <input type="text" id="buyerDirectorate" autocomplete="off" spellcheck="false" onclick="this.focus();" placeholder="Type or tap &#9662;">
+            <button type="button" class="btn-dir-pick" onclick="toggleDirPopover(event)" title="Pick Directorate from list">&#9662;</button>
+          </div>
+        </div>
+        <div class="dir-quick-tray" id="dirQuickPopover">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:0.7rem; font-weight:800; color:var(--primary); text-transform:uppercase;">Tap Directorate (or type above)</span>
+            <button type="button" style="background:none; border:none; font-size:0.75rem; font-weight:800; color:var(--muted); cursor:pointer;" onclick="closeDirPopover()">Close &times;</button>
+          </div>
+          <div class="dir-quick-grid">
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('TCJ1')">TCJ1</button>
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('TCJ2')">TCJ2</button>
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('TCJ3')">TCJ3</button>
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('TCJ4')">TCJ4</button>
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('TCJ5')">TCJ5</button>
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('TCJ5-4')">TCJ5-4</button>
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('TCJ457')">TCJ457</button>
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('TCJ6')">TCJ6</button>
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('TCJ8')">TCJ8</button>
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('TCCC')">TCCC</button>
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('TCCS')">TCCS</button>
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('TCSG')">TCSG</button>
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('TCPA')">TCPA</button>
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('TCAQ')">TCAQ</button>
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('TACC')">TACC</button>
+            <button type="button" class="dir-chip-btn" onclick="pickDirectorateChip('Command Staff')">Cmd Staff</button>
+          </div>
         </div>
       </div>
 
@@ -1948,12 +1997,9 @@
           </div>
         </div>
 
-        <!-- OFFICIAL ZEFFY CAMPAIGN EMBED + AUTOMATIC /embed/ IFRAME FALLBACK -->
+        <!-- DYNAMIC ZERO-FOOTPRINT IFRAME HOST (No iframe or external script in initial DOM; created ONLY when Personal Tablet Embed tab is opened, and completely removed on close so DISA RBI never suppresses parent text inputs!) -->
         <div id="zeffyOfficialEmbedWrap" style="flex:1; display:flex; flex-direction:column; min-height:0; overflow-y:auto; position:relative; background:#ffffff;">
-          <div id="zeffyScriptMount" data-zeffy-embed data-form-url="/embed/donation-form/transcom-booster-club-payment" style="width:100%;"></div>
-          <div id="zeffyIframeFallbackWrap" data-zeffy-embed-fallback style="flex:1; display:flex; flex-direction:column; position:relative; min-height:360px; width:100%;">
-            <iframe id="zeffyKioskIframe" title="Donation form powered by Zeffy" style="border:0; width:100%; flex:1; min-height:360px;" data-zeffy-embed-src="https://www.zeffy.com/embed/donation-form/transcom-booster-club-payment" allow="payment *; clipboard-write *" allowpaymentrequest allowTransparency="true"></iframe>
-          </div>
+          <div id="zeffyDynamicIframeHost" style="flex:1; display:flex; flex-direction:column; position:relative; min-height:360px; width:100%;"></div>
         </div>
       </div>
     </div>
@@ -3568,6 +3614,7 @@
     cart = {};
     customCartItems = [];
     keepChangeRefused = false;
+    closeDirPopover();
     document.getElementById("cashInput").value = "";
     document.getElementById("buyerName").value = "";
     document.getElementById("buyerDirectorate").value = "";
@@ -4340,45 +4387,73 @@
     return { shareUrl: shareUrl, embedUrl: embedUrl, embedPath: embedPath };
   }
 
-  let zeffyScriptAttempted = false;
   let zeffyEmbedModeOpen = false;
 
-  function ensureZeffyEmbedScriptLoaded() {
-    const scriptMount = document.getElementById("zeffyScriptMount");
-    const fallbackWrap = document.getElementById("zeffyIframeFallbackWrap");
-    const iframe = document.getElementById("zeffyKioskIframe");
-    const urls = deriveZeffyUrls(zeffyUrl);
-    if (iframe && urls.embedUrl && iframe.getAttribute("data-loaded-url") !== urls.embedUrl) {
-      iframe.src = urls.embedUrl;
-      iframe.setAttribute("data-loaded-url", urls.embedUrl);
+  function toggleDirPopover(evt) {
+    if (evt && typeof evt.stopPropagation === "function") evt.stopPropagation();
+    const pop = document.getElementById("dirQuickPopover");
+    if (pop) pop.classList.toggle("open");
+  }
+
+  function closeDirPopover() {
+    const pop = document.getElementById("dirQuickPopover");
+    if (pop) pop.classList.remove("open");
+  }
+
+  function pickDirectorateChip(val) {
+    const inp = document.getElementById("buyerDirectorate");
+    if (inp) {
+      inp.value = val;
     }
-    // Check if Zeffy's v2 script already injected an iframe inside #zeffyScriptMount
-    if (scriptMount && scriptMount.querySelector("iframe")) {
-      if (fallbackWrap) fallbackWrap.style.display = "none";
+    closeDirPopover();
+  }
+
+  document.addEventListener("click", function(evt) {
+    const pop = document.getElementById("dirQuickPopover");
+    const box = document.getElementById("customerBoxContainer");
+    if (pop && pop.classList.contains("open") && box && !box.contains(evt.target)) {
+      pop.classList.remove("open");
+    }
+  });
+
+  function restoreParentKeyboardFocus() {
+    try {
+      if (document.activeElement && document.activeElement.tagName === "IFRAME") {
+        document.activeElement.blur();
+      }
+      window.focus();
+    } catch (e) {}
+  }
+
+  function destroyZeffyDynamicIframe() {
+    const host = document.getElementById("zeffyDynamicIframeHost");
+    if (host) {
+      host.innerHTML = "";
+    }
+    restoreParentKeyboardFocus();
+  }
+
+  function mountZeffyDynamicIframe(forceReload) {
+    const host = document.getElementById("zeffyDynamicIframeHost");
+    if (!host) return;
+    const urls = deriveZeffyUrls(zeffyUrl);
+    if (!urls.embedUrl) {
+      host.innerHTML = "";
       return;
     }
-    // Keep the /embed/ fallback iframe active until/unless zeffy-embed.js injects its own
-    if (fallbackWrap) fallbackWrap.style.display = "flex";
-    if (!zeffyScriptAttempted) {
-      zeffyScriptAttempted = true;
-      const s = document.createElement("script");
-      s.src = "https://www.zeffy.com/embed/v2/zeffy-embed.js";
-      s.async = true;
-      s.onload = function() {
-        setTimeout(function() {
-          if (scriptMount && scriptMount.querySelector("iframe")) {
-            if (fallbackWrap) fallbackWrap.style.display = "none";
-          }
-        }, 400);
-      };
-      s.onerror = function() {
-        if (fallbackWrap) fallbackWrap.style.display = "flex";
-        if (iframe && iframe.getAttribute("data-zeffy-embed-src") && !iframe.src) {
-          iframe.src = iframe.getAttribute("data-zeffy-embed-src");
-        }
-      };
-      document.body.appendChild(s);
+    const existing = host.querySelector("iframe");
+    if (existing && !forceReload && existing.getAttribute("data-loaded-url") === urls.embedUrl) {
+      return;
     }
+    host.innerHTML = "";
+    const ifr = document.createElement("iframe");
+    ifr.id = "zeffyKioskIframe";
+    ifr.title = "Donation form powered by Zeffy";
+    ifr.style.cssText = "border:0; width:100%; flex:1; min-height:360px; background:#ffffff;";
+    ifr.setAttribute("allow", "payment *");
+    ifr.setAttribute("data-loaded-url", urls.embedUrl);
+    ifr.src = urls.embedUrl;
+    host.appendChild(ifr);
   }
 
   function setZeffyModalViewMode(showEmbed) {
@@ -4402,7 +4477,9 @@
         : "&#128241; Show Embedded Tablet Kiosk Form";
     }
     if (zeffyEmbedModeOpen) {
-      ensureZeffyEmbedScriptLoaded();
+      mountZeffyDynamicIframe(false);
+    } else {
+      destroyZeffyDynamicIframe();
     }
   }
 
@@ -4436,8 +4513,6 @@
     if (sumEl) sumEl.textContent = parts.join(" • ") || "Current Order";
 
     const embedWrap = document.getElementById("zeffyOfficialEmbedWrap");
-    const scriptMount = document.getElementById("zeffyScriptMount");
-    const iframe = document.getElementById("zeffyKioskIframe");
     const missingCompact = document.getElementById("zeffyMissingUrlCompactNotice");
     const openLinkPrimary = document.getElementById("zeffyOpenNewTabPrimary");
     const openLinkSmall = document.getElementById("zeffyOpenNewTabLink");
@@ -4448,18 +4523,8 @@
     if (urls.embedUrl) {
       if (missingCompact) missingCompact.style.display = "none";
       if (embedWrap) embedWrap.style.display = "flex";
-      if (scriptMount && urls.embedPath) {
-        scriptMount.setAttribute("data-form-url", urls.embedPath);
-      }
-      if (iframe) {
-        iframe.setAttribute("data-zeffy-embed-src", urls.embedUrl);
-        if (zeffyEmbedModeOpen && iframe.getAttribute("data-loaded-url") !== urls.embedUrl) {
-          iframe.src = urls.embedUrl;
-          iframe.setAttribute("data-loaded-url", urls.embedUrl);
-        }
-      }
       if (zeffyEmbedModeOpen) {
-        ensureZeffyEmbedScriptLoaded();
+        mountZeffyDynamicIframe(false);
       }
 
       if (openLinkPrimary) {
@@ -4479,6 +4544,7 @@
         }
       }
     } else {
+      destroyZeffyDynamicIframe();
       if (embedWrap) embedWrap.style.display = "none";
       if (missingCompact) missingCompact.style.display = "block";
       if (openLinkPrimary) openLinkPrimary.style.display = "none";
@@ -4490,17 +4556,13 @@
   }
 
   function reloadZeffyIframe() {
-    const iframe = document.getElementById("zeffyKioskIframe");
-    const urls = deriveZeffyUrls(zeffyUrl);
-    if (iframe && urls.embedUrl) {
-      iframe.src = urls.embedUrl;
-      iframe.setAttribute("data-loaded-url", urls.embedUrl);
-    }
+    mountZeffyDynamicIframe(true);
   }
 
   function openZeffyKioskModal() {
     const total = getCartTotal();
     if (total <= 0) return;
+    closeDirPopover();
     setZeffyModalViewMode(false);
     populateZeffyKioskModalUI();
     const modal = document.getElementById("zeffyKioskModal");
@@ -4508,6 +4570,8 @@
   }
 
   function closeZeffyKioskModal() {
+    destroyZeffyDynamicIframe();
+    zeffyEmbedModeOpen = false;
     const modal = document.getElementById("zeffyKioskModal");
     if (modal) modal.style.display = "none";
   }
@@ -4928,7 +4992,7 @@
   }
 
   function pullInventoryFromCloud(silent) {
-    if (silent && (isInventoryModalOpen() || isZeffyKioskModalOpen() || (document.getElementById("niprInputModal") && document.getElementById("niprInputModal").style.display === "flex") || editingSaleBackup !== null || isSyncing)) return;
+    if (silent && (isInventoryModalOpen() || isZeffyKioskModalOpen() || (document.getElementById("niprInputModal") && document.getElementById("niprInputModal").style.display === "flex") || (document.getElementById("niprDialogModal") && document.getElementById("niprDialogModal").style.display === "flex") || editingSaleBackup !== null || isSyncing)) return;
     pruneVoidedFromOfflineQueue();
     if (!silent && offlineQueue.length > 0) {
       flushOfflineQueue(true);
@@ -6405,10 +6469,10 @@
     if (zefCompact) zefCompact.style.display = "grid";
     const zefEmbedPane = clone.querySelector("#zeffyEmbeddedPane");
     if (zefEmbedPane) zefEmbedPane.style.display = "none";
-    const zefMount = clone.querySelector("#zeffyScriptMount");
-    if (zefMount) zefMount.innerHTML = "";
-    const zefIframe = clone.querySelector("#zeffyKioskIframe");
-    if (zefIframe) { zefIframe.removeAttribute("src"); zefIframe.removeAttribute("data-loaded-url"); }
+    const zefHost = clone.querySelector("#zeffyDynamicIframeHost");
+    if (zefHost) zefHost.innerHTML = "";
+    const dirPop = clone.querySelector("#dirQuickPopover");
+    if (dirPop) dirPop.classList.remove("open");
     const drawerEl = clone.querySelector("#cartPanel");
     if (drawerEl) drawerEl.classList.remove("open-drawer");
     const editBannerEl = clone.querySelector("#editingOrderBanner");
