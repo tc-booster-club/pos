@@ -932,14 +932,18 @@
       background: #ffffff;
       border-radius: 14px;
       width: 100%;
-      max-width: 1060px;
-      height: 92vh;
-      max-height: 860px;
+      max-width: 880px;
+      max-height: 94vh;
       display: flex;
       flex-direction: column;
       padding: 14px 18px;
       box-shadow: 0 16px 42px rgba(0,0,0,0.4);
       overflow: hidden;
+      transition: max-width 0.18s ease;
+    }
+    .zeffy-kiosk-modal.embed-open {
+      max-width: 1020px;
+      height: 93vh;
     }
     .zeffy-amount-banner {
       background: linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%);
@@ -952,16 +956,17 @@
       flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 8px;
+      flex-shrink: 0;
     }
     .zeffy-amount-banner .amt-label {
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       color: #ddd6fe;
     }
     .zeffy-amount-banner .amt-val {
-      font-size: 2.1rem;
+      font-size: 2.15rem;
       font-weight: 900;
       line-height: 1.05;
       color: #ffffff;
@@ -971,60 +976,156 @@
       border: 2px solid #f59e0b;
       color: #92400e;
       border-radius: 8px;
-      padding: 7px 12px;
-      font-size: 0.84rem;
+      padding: 6px 12px;
+      font-size: 0.82rem;
       font-weight: 800;
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
+      flex-shrink: 0;
     }
-    .zeffy-split-grid {
-      display: grid;
-      grid-template-columns: 1fr 275px;
-      gap: 12px;
+    .zeffy-mode-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    .zeffy-mode-tabs {
+      display: inline-flex;
+      background: #f1f5f9;
+      padding: 3px;
+      border-radius: 9px;
+      border: 1px solid #cbd5e1;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .zeffy-mode-tab {
+      padding: 7px 12px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: #334155;
+      font-size: 0.8rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .zeffy-mode-tab.active {
+      background: #5b21b6;
+      color: #ffffff;
+      box-shadow: 0 1px 4px rgba(91,33,182,0.28);
+    }
+    .btn-zeffy-embed-toggle {
+      padding: 7px 12px;
+      border-radius: 7px;
+      border: 2px solid #c4b5fd;
+      background: #f5f3ff;
+      color: #5b21b6;
+      font-size: 0.8rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-zeffy-embed-toggle:hover { background: #ede9fe; }
+    .btn-zeffy-embed-toggle.active {
+      background: #5b21b6;
+      color: #ffffff;
+      border-color: #4c1d95;
+    }
+    .zeffy-body-area {
       flex: 1;
       min-height: 0;
-      overflow: hidden;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .zeffy-default-grid {
+      display: grid;
+      grid-template-columns: 245px 1fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+    .zeffy-qr-card {
+      border: 2px solid #ddd6fe;
+      border-radius: 12px;
+      background: #f5f3ff;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .zeffy-qr-box {
+      background: #ffffff;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 196px;
+      height: 196px;
+      flex-shrink: 0;
+      margin: 6px auto;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .zeffy-actions-card {
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .btn-zeffy-open-tab-lg {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%);
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 10px;
+      font-size: 0.98rem;
+      font-weight: 900;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(109,40,217,0.28);
+      border: none;
+      cursor: pointer;
+    }
+    .btn-zeffy-open-tab-lg:hover {
+      background: linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%);
+    }
+    .zeffy-step-box {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.81rem;
+      line-height: 1.45;
+      color: var(--text);
     }
     .zeffy-iframe-pane {
       border: 2px solid #cbd5e1;
       border-radius: 10px;
       background: #f8fafc;
-      display: flex;
+      display: none;
       flex-direction: column;
       overflow: hidden;
       position: relative;
-      min-height: 280px;
+      flex: 1;
+      min-height: 360px;
     }
     .zeffy-iframe-pane iframe {
       width: 100%;
       flex: 1;
       border: none;
       background: #ffffff;
-    }
-    .zeffy-qr-pane {
-      border: 2px solid #ddd6fe;
-      border-radius: 10px;
-      background: #f5f3ff;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      text-align: center;
-      overflow-y: auto;
-    }
-    .zeffy-qr-box {
-      background: #ffffff;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid #cbd5e1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 206px;
-      height: 206px;
-      margin: 6px auto;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
     }
     .zeffy-footer-bar {
       display: flex;
@@ -1035,6 +1136,7 @@
       margin-top: 10px;
       border-top: 2px solid #e2e8f0;
       flex-wrap: wrap;
+      flex-shrink: 0;
     }
     .btn-zeffy-confirm {
       flex: 1;
@@ -1050,9 +1152,9 @@
       box-shadow: 0 3px 10px rgba(22,163,74,0.3);
     }
     .btn-zeffy-confirm:hover { background: #15803d; }
-    @media (max-width: 820px) {
-      .zeffy-kiosk-modal { height: 95vh; padding: 12px; }
-      .zeffy-split-grid { grid-template-columns: 1fr; overflow-y: auto; }
+    @media (max-width: 660px) {
+      .zeffy-kiosk-modal { max-height: 96vh; padding: 12px; }
+      .zeffy-default-grid { grid-template-columns: 1fr; }
       .zeffy-iframe-pane { min-height: 340px; }
     }
 
@@ -1719,7 +1821,7 @@
 
 <!-- NIPR-SAFE IN-PAGE INPUT MODAL (Replaces frozen browser-isolated native prompt boxes) -->
 <div class="nipr-modal-backdrop" id="niprInputModal">
-  <div class="nipr-prompt-card" onclick="event.stopPropagation()">
+  <div class="nipr-prompt-card">
     <h3 id="niprModalTitle">Enter Value</h3>
     <p class="nipr-prompt-msg" id="niprModalMessage"></p>
     <div style="display:flex; gap:6px; align-items:center;">
@@ -1751,7 +1853,7 @@
 
 <!-- NIPR-SAFE IN-PAGE NOTICE & CONFIRMATION MODAL (Replaces DISA-freezing window.alert & window.confirm) -->
 <div class="nipr-modal-backdrop" id="niprDialogModal" style="z-index: 1250;">
-  <div class="nipr-prompt-card" style="max-width: 480px;" onclick="event.stopPropagation()">
+  <div class="nipr-prompt-card" style="max-width: 480px;">
     <h3 id="niprDialogTitle">Booster Club POS</h3>
     <p class="nipr-prompt-msg" id="niprDialogMessage" style="max-height: 55vh; overflow-y: auto;"></p>
     <div class="nipr-prompt-actions">
@@ -1763,14 +1865,14 @@
 
 <!-- ZEFFY TABLET KIOSK & NIPR PHONE QR CHECKOUT MODAL -->
 <div class="nipr-modal-backdrop" id="zeffyKioskModal" style="z-index: 1100;">
-  <div class="zeffy-kiosk-modal" onclick="event.stopPropagation()">
+  <div class="zeffy-kiosk-modal" id="zeffyKioskCard">
     <div class="zeffy-amount-banner">
       <div>
         <div class="amt-label">&#128179; Zeffy Electronic Checkout &bull; Exact Amount Due</div>
         <div class="amt-val" id="zeffyExactAmountDisplay">$0.00</div>
       </div>
-      <div style="text-align:right; max-width:460px;">
-        <div style="font-size:0.82rem; font-weight:700; color:#ede9fe;" id="zeffyOrderSummaryLine">Order Summary</div>
+      <div style="text-align:right; max-width:480px;">
+        <div style="font-size:0.84rem; font-weight:800; color:#ffffff;" id="zeffyOrderSummaryLine">Order Summary</div>
         <div style="font-size:0.74rem; color:#ddd6fe; margin-top:2px;">Stock is held safely until cashier taps <strong>Confirm Zeffy Payment Verified</strong> below</div>
       </div>
     </div>
@@ -1779,50 +1881,79 @@
       &#128161; <strong>$0 Optional Tip Helper:</strong> Zeffy adds an optional tip—tap dropdown &rarr; select <strong>'Other'</strong> &rarr; enter <strong>$0</strong>
     </div>
 
-    <div class="zeffy-split-grid">
-      <div class="zeffy-iframe-pane">
-        <div style="background:#eef2ff; padding:7px 12px; border-bottom:1px solid #cbd5e1; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-          <span style="font-size:0.76rem; font-weight:800; color:#3730a3;">&#128241; Tablet Kiosk Official Zeffy Embed</span>
-          <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-            <button type="button" class="btn-photo" onclick="reloadZeffyIframe()">&#128260; Reload Form</button>
-            <a id="zeffyOpenNewTabLink" href="https://www.zeffy.com/en-US/donation-form/transcom-booster-club-payment" target="_blank" rel="noopener noreferrer" class="btn-photo" style="text-decoration:none; background:#6d28d9; color:#ffffff; font-weight:800; padding:7px 11px;">&#128179; Open Zeffy Payment Page &nearr;</a>
+    <div class="zeffy-mode-bar">
+      <div class="zeffy-mode-tabs">
+        <button type="button" class="zeffy-mode-tab active" id="zeffyTabQrBtn" onclick="setZeffyModalViewMode(false)">&#128247; Phone QR &amp; NIPR Tab (Default)</button>
+        <button type="button" class="zeffy-mode-tab" id="zeffyTabEmbedBtn" onclick="setZeffyModalViewMode(true)">&#128241; Embedded Tablet Kiosk Form</button>
+      </div>
+      <button type="button" class="btn-zeffy-embed-toggle" id="zeffyToggleEmbedBtn" onclick="toggleZeffyEmbeddedForm()">&#128241; Show Embedded Tablet Kiosk Form</button>
+    </div>
+
+    <div class="zeffy-body-area">
+      <!-- DEFAULT COMPACT SIDE-BY-SIDE VIEW: PHONE QR + NIPR FULL-TAB BUTTON (NEVER SQUISHED!) -->
+      <div class="zeffy-default-grid" id="zeffyDefaultCompactView">
+        <div class="zeffy-qr-card">
+          <div style="font-size:0.8rem; font-weight:900; color:#4c1d95; text-transform:uppercase; letter-spacing:0.4px;">&#128247; Scan with Personal Phone</div>
+          <div style="font-size:0.73rem; color:#5b21b6; font-weight:700; margin-top:2px;">Fastest buyer self-checkout!</div>
+          <div class="zeffy-qr-box" id="zeffyQrContainer">
+            <span style="font-size:0.75rem; color:var(--muted);">Set Zeffy URL to generate QR</span>
+          </div>
+          <div style="background:#ffffff; border:1px solid #ddd6fe; border-radius:8px; padding:5px 10px; width:100%; margin-top:2px;">
+            <span style="font-size:0.68rem; font-weight:800; color:var(--muted); text-transform:uppercase;">Enter on Phone: </span>
+            <strong style="font-size:1.15rem; font-weight:900; color:#4c1d95;" id="zeffyQrAmountSub">$0.00</strong>
           </div>
         </div>
-        <div id="zeffyMissingUrlNotice" style="display:none; padding:28px 20px; text-align:center; margin:auto; max-width:440px;">
-          <h3 style="margin:0 0 8px 0; color:#5b21b6;">No Zeffy Form URL Configured Yet</h3>
-          <p style="font-size:0.84rem; color:var(--muted); margin:0 0 12px 0;">Paste your Booster Club's Zeffy ticketing or payment link once below to enable the embedded kiosk &amp; scannable QR code on all devices:</p>
-          <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            <input type="text" id="kioskQuickZeffyUrlInput" value="https://www.zeffy.com/en-US/donation-form/transcom-booster-club-payment" autocomplete="off" spellcheck="false" placeholder="https://www.zeffy.com/en-US/..." onclick="this.focus();" style="flex:1; min-width:190px; padding:9px 10px; border:2px solid #c4b5fd; border-radius:6px; font-size:0.85rem;" onkeydown="if(event.key==='Enter'){event.preventDefault();saveZeffyUrlSetting('kioskQuickZeffyUrlInput');}">
-            <button type="button" class="btn-photo" style="background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd; padding:8px 10px;" onclick="pasteIntoInputById('kioskQuickZeffyUrlInput')">&#128203; Paste</button>
-            <button type="button" class="btn-add" style="background:#6d28d9;" onclick="saveZeffyUrlSetting('kioskQuickZeffyUrlInput')">Save URL</button>
+
+        <div class="zeffy-actions-card">
+          <div>
+            <div style="font-size:0.82rem; font-weight:900; color:#1e3a8a; text-transform:uppercase; margin-bottom:6px;">&#128187; Paying on This Laptop or Tablet?</div>
+            <a id="zeffyOpenNewTabPrimary" href="https://www.zeffy.com/en-US/donation-form/transcom-booster-club-payment" target="_blank" rel="noopener noreferrer" class="btn-zeffy-open-tab-lg">
+              &#128179; Open Zeffy Payment Tab (For NIPR Laptop Typing) &nearr;
+            </a>
+            <div style="font-size:0.74rem; color:var(--muted); margin-top:5px; font-weight:600;">
+              Opens Zeffy in a full browser tab so DISA Browser Isolation allows full keyboard typing.
+            </div>
+          </div>
+
+          <div class="zeffy-step-box">
+            <div><strong>1. Enter Exact Total:</strong> Type <strong style="color:#4c1d95; font-size:0.92rem;" id="zeffyStepAmtText">$0.00</strong> on Zeffy (scan QR or open tab above).</div>
+            <div style="margin-top:3px;"><strong>2. Optional Zeffy Tip:</strong> Tap tip dropdown &rarr; choose <strong>'Other'</strong> &rarr; enter <strong>$0</strong>.</div>
+            <div style="margin-top:3px;"><strong>3. Cashier Verification:</strong> Once buyer's confirmation screen appears, tap <strong>Confirm Zeffy Payment Verified</strong> below!</div>
+          </div>
+
+          <div id="zeffyMissingUrlCompactNotice" style="display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:8px 10px;">
+            <div style="font-size:0.78rem; font-weight:800; color:#991b1b; margin-bottom:4px;">No Zeffy URL Set Yet — Paste Once to Sync via D1:</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <input type="text" id="kioskQuickZeffyUrlInput" value="https://www.zeffy.com/en-US/donation-form/transcom-booster-club-payment" autocomplete="off" spellcheck="false" placeholder="https://www.zeffy.com/en-US/..." onclick="this.focus();" style="flex:1; min-width:170px; padding:7px 9px; border:1px solid #c4b5fd; border-radius:6px; font-size:0.82rem;" onkeydown="if(event.key==='Enter'){event.preventDefault();saveZeffyUrlSetting('kioskQuickZeffyUrlInput');}">
+              <button type="button" class="btn-photo" style="background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd;" onclick="pasteIntoInputById('kioskQuickZeffyUrlInput')">&#128203; Paste</button>
+              <button type="button" class="btn-add" style="background:#6d28d9; padding:7px 12px;" onclick="saveZeffyUrlSetting('kioskQuickZeffyUrlInput')">Save</button>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn-photo" style="background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe; padding:7px 11px;" onclick="setZeffyModalViewMode(true)">&#128241; Using Personal iPad/Tablet? Open Embedded Form</button>
+            <button type="button" class="btn-photo" style="background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd; padding:7px 10px;" onclick="promptAdminEditZeffyUrl()">&#9881; Set / Edit Zeffy URL</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOGGLEABLE EMBEDDED TABLET KIOSK PANE (FOR PERSONAL IPAD / PHONE KIOSKS OFF NIPR) -->
+      <div class="zeffy-iframe-pane" id="zeffyEmbeddedPane" style="display:none;">
+        <div style="background:#eef2ff; padding:7px 12px; border-bottom:1px solid #cbd5e1; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span style="font-size:0.76rem; font-weight:800; color:#3730a3;">&#128241; Personal Tablet / Phone Embedded Kiosk (Note: On NIPR laptops, use QR or Open Tab)</span>
+          <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+            <button type="button" class="btn-photo" onclick="setZeffyModalViewMode(false)">&larr; Back to Phone QR</button>
+            <button type="button" class="btn-photo" onclick="reloadZeffyIframe()">&#128260; Reload Form</button>
+            <a id="zeffyOpenNewTabLink" href="https://www.zeffy.com/en-US/donation-form/transcom-booster-club-payment" target="_blank" rel="noopener noreferrer" class="btn-photo" style="text-decoration:none; background:#6d28d9; color:#ffffff; font-weight:800; padding:7px 11px;">&#128179; Open Full Tab &nearr;</a>
           </div>
         </div>
 
         <!-- OFFICIAL ZEFFY CAMPAIGN EMBED + AUTOMATIC /embed/ IFRAME FALLBACK -->
         <div id="zeffyOfficialEmbedWrap" style="flex:1; display:flex; flex-direction:column; min-height:0; overflow-y:auto; position:relative; background:#ffffff;">
           <div id="zeffyScriptMount" data-zeffy-embed data-form-url="/embed/donation-form/transcom-booster-club-payment" style="width:100%;"></div>
-          <div id="zeffyIframeFallbackWrap" data-zeffy-embed-fallback style="flex:1; display:flex; flex-direction:column; position:relative; min-height:380px; width:100%;">
-            <iframe id="zeffyKioskIframe" title="Donation form powered by Zeffy" style="border:0; width:100%; flex:1; min-height:380px;" data-zeffy-embed-src="https://www.zeffy.com/embed/donation-form/transcom-booster-club-payment" allow="payment *; clipboard-write *" allowpaymentrequest allowTransparency="true"></iframe>
+          <div id="zeffyIframeFallbackWrap" data-zeffy-embed-fallback style="flex:1; display:flex; flex-direction:column; position:relative; min-height:360px; width:100%;">
+            <iframe id="zeffyKioskIframe" title="Donation form powered by Zeffy" style="border:0; width:100%; flex:1; min-height:360px;" data-zeffy-embed-src="https://www.zeffy.com/embed/donation-form/transcom-booster-club-payment" allow="payment *; clipboard-write *" allowpaymentrequest allowTransparency="true"></iframe>
           </div>
-        </div>
-      </div>
-
-      <div class="zeffy-qr-pane">
-        <div>
-          <div style="font-size:0.8rem; font-weight:900; color:#4c1d95; text-transform:uppercase; letter-spacing:0.4px;">&#128247; Scan with Personal Phone</div>
-          <div style="font-size:0.74rem; color:#5b21b6; font-weight:600; margin-top:2px;">Works even if NIPR blocks embedded iframes!</div>
-        </div>
-
-        <div class="zeffy-qr-box" id="zeffyQrContainer">
-          <span style="font-size:0.75rem; color:var(--muted);">Set Zeffy URL to generate QR</span>
-        </div>
-
-        <div style="width:100%;">
-          <div style="background:#ffffff; border:1px solid #ddd6fe; border-radius:8px; padding:8px; margin-bottom:8px;">
-            <div style="font-size:0.7rem; font-weight:800; color:var(--muted); text-transform:uppercase;">Amount to Enter on Phone</div>
-            <div style="font-size:1.35rem; font-weight:900; color:#4c1d95;" id="zeffyQrAmountSub">$0.00</div>
-          </div>
-          <button type="button" class="btn-photo" style="width:100%; background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd; padding:8px;" onclick="promptAdminEditZeffyUrl()">&#9881; Set / Edit Zeffy URL</button>
         </div>
       </div>
     </div>
@@ -4210,17 +4341,23 @@
   }
 
   let zeffyScriptAttempted = false;
+  let zeffyEmbedModeOpen = false;
 
   function ensureZeffyEmbedScriptLoaded() {
     const scriptMount = document.getElementById("zeffyScriptMount");
     const fallbackWrap = document.getElementById("zeffyIframeFallbackWrap");
     const iframe = document.getElementById("zeffyKioskIframe");
+    const urls = deriveZeffyUrls(zeffyUrl);
+    if (iframe && urls.embedUrl && iframe.getAttribute("data-loaded-url") !== urls.embedUrl) {
+      iframe.src = urls.embedUrl;
+      iframe.setAttribute("data-loaded-url", urls.embedUrl);
+    }
     // Check if Zeffy's v2 script already injected an iframe inside #zeffyScriptMount
     if (scriptMount && scriptMount.querySelector("iframe")) {
       if (fallbackWrap) fallbackWrap.style.display = "none";
       return;
     }
-    // Always keep the /embed/ fallback iframe active until/unless zeffy-embed.js injects its own
+    // Keep the /embed/ fallback iframe active until/unless zeffy-embed.js injects its own
     if (fallbackWrap) fallbackWrap.style.display = "flex";
     if (!zeffyScriptAttempted) {
       zeffyScriptAttempted = true;
@@ -4244,6 +4381,35 @@
     }
   }
 
+  function setZeffyModalViewMode(showEmbed) {
+    zeffyEmbedModeOpen = Boolean(showEmbed);
+    const card = document.getElementById("zeffyKioskCard");
+    const compactView = document.getElementById("zeffyDefaultCompactView");
+    const embedPane = document.getElementById("zeffyEmbeddedPane");
+    const tabQr = document.getElementById("zeffyTabQrBtn");
+    const tabEmbed = document.getElementById("zeffyTabEmbedBtn");
+    const toggleBtn = document.getElementById("zeffyToggleEmbedBtn");
+
+    if (card) card.classList.toggle("embed-open", zeffyEmbedModeOpen);
+    if (compactView) compactView.style.display = zeffyEmbedModeOpen ? "none" : "grid";
+    if (embedPane) embedPane.style.display = zeffyEmbedModeOpen ? "flex" : "none";
+    if (tabQr) tabQr.classList.toggle("active", !zeffyEmbedModeOpen);
+    if (tabEmbed) tabEmbed.classList.toggle("active", zeffyEmbedModeOpen);
+    if (toggleBtn) {
+      toggleBtn.classList.toggle("active", zeffyEmbedModeOpen);
+      toggleBtn.innerHTML = zeffyEmbedModeOpen
+        ? "&#128247; Hide Embedded Form (Show Phone QR)"
+        : "&#128241; Show Embedded Tablet Kiosk Form";
+    }
+    if (zeffyEmbedModeOpen) {
+      ensureZeffyEmbedScriptLoaded();
+    }
+  }
+
+  function toggleZeffyEmbeddedForm() {
+    setZeffyModalViewMode(!zeffyEmbedModeOpen);
+  }
+
   function populateZeffyKioskModalUI() {
     const total = getCartTotal();
     const totalPatches = getPatchCountInCart();
@@ -4259,43 +4425,53 @@
       parts.push(q + "x " + ci.title + " ($" + ((parseFloat(ci.unitPrice) || 0) * q).toFixed(2) + ")");
     });
 
+    const formattedAmt = "$" + total.toFixed(2);
     const amtEl = document.getElementById("zeffyExactAmountDisplay");
     const qrAmtEl = document.getElementById("zeffyQrAmountSub");
+    const stepAmtEl = document.getElementById("zeffyStepAmtText");
     const sumEl = document.getElementById("zeffyOrderSummaryLine");
-    if (amtEl) amtEl.textContent = "$" + total.toFixed(2);
-    if (qrAmtEl) qrAmtEl.textContent = "$" + total.toFixed(2);
+    if (amtEl) amtEl.textContent = formattedAmt;
+    if (qrAmtEl) qrAmtEl.textContent = formattedAmt;
+    if (stepAmtEl) stepAmtEl.textContent = formattedAmt;
     if (sumEl) sumEl.textContent = parts.join(" • ") || "Current Order";
 
     const embedWrap = document.getElementById("zeffyOfficialEmbedWrap");
     const scriptMount = document.getElementById("zeffyScriptMount");
     const iframe = document.getElementById("zeffyKioskIframe");
-    const missingBox = document.getElementById("zeffyMissingUrlNotice");
-    const openLink = document.getElementById("zeffyOpenNewTabLink");
+    const missingCompact = document.getElementById("zeffyMissingUrlCompactNotice");
+    const openLinkPrimary = document.getElementById("zeffyOpenNewTabPrimary");
+    const openLinkSmall = document.getElementById("zeffyOpenNewTabLink");
     const qrBox = document.getElementById("zeffyQrContainer");
 
     const urls = deriveZeffyUrls(zeffyUrl);
 
     if (urls.embedUrl) {
-      if (missingBox) missingBox.style.display = "none";
+      if (missingCompact) missingCompact.style.display = "none";
       if (embedWrap) embedWrap.style.display = "flex";
       if (scriptMount && urls.embedPath) {
         scriptMount.setAttribute("data-form-url", urls.embedPath);
       }
       if (iframe) {
         iframe.setAttribute("data-zeffy-embed-src", urls.embedUrl);
-        if (iframe.getAttribute("data-loaded-url") !== urls.embedUrl) {
+        if (zeffyEmbedModeOpen && iframe.getAttribute("data-loaded-url") !== urls.embedUrl) {
           iframe.src = urls.embedUrl;
           iframe.setAttribute("data-loaded-url", urls.embedUrl);
         }
       }
-      ensureZeffyEmbedScriptLoaded();
+      if (zeffyEmbedModeOpen) {
+        ensureZeffyEmbedScriptLoaded();
+      }
 
-      if (openLink) {
-        openLink.href = urls.shareUrl;
-        openLink.style.display = "inline-block";
+      if (openLinkPrimary) {
+        openLinkPrimary.href = urls.shareUrl;
+        openLinkPrimary.style.display = "flex";
+      }
+      if (openLinkSmall) {
+        openLinkSmall.href = urls.shareUrl;
+        openLinkSmall.style.display = "inline-block";
       }
       if (qrBox) {
-        const svgMarkup = generateInlineQrSvg(urls.shareUrl, 184);
+        const svgMarkup = generateInlineQrSvg(urls.shareUrl, 178);
         if (svgMarkup) {
           qrBox.innerHTML = svgMarkup;
         } else {
@@ -4304,10 +4480,11 @@
       }
     } else {
       if (embedWrap) embedWrap.style.display = "none";
-      if (missingBox) missingBox.style.display = "block";
-      if (openLink) openLink.style.display = "none";
+      if (missingCompact) missingCompact.style.display = "block";
+      if (openLinkPrimary) openLinkPrimary.style.display = "none";
+      if (openLinkSmall) openLinkSmall.style.display = "none";
       if (qrBox) {
-        qrBox.innerHTML = '<span style="font-size:0.76rem; color:var(--muted); padding:8px;">Admin: Paste Zeffy URL on the left or tap <strong>Set / Edit Zeffy URL</strong> below</span>';
+        qrBox.innerHTML = '<span style="font-size:0.76rem; color:var(--muted); padding:8px;">Tap <strong>Set / Edit Zeffy URL</strong> to generate QR</span>';
       }
     }
   }
@@ -4324,6 +4501,7 @@
   function openZeffyKioskModal() {
     const total = getCartTotal();
     if (total <= 0) return;
+    setZeffyModalViewMode(false);
     populateZeffyKioskModalUI();
     const modal = document.getElementById("zeffyKioskModal");
     if (modal) modal.style.display = "flex";
@@ -6221,6 +6399,12 @@
     if (niprDlgEl) niprDlgEl.style.display = "none";
     const zefEl = clone.querySelector("#zeffyKioskModal");
     if (zefEl) zefEl.style.display = "none";
+    const zefCard = clone.querySelector("#zeffyKioskCard");
+    if (zefCard) zefCard.classList.remove("embed-open");
+    const zefCompact = clone.querySelector("#zeffyDefaultCompactView");
+    if (zefCompact) zefCompact.style.display = "grid";
+    const zefEmbedPane = clone.querySelector("#zeffyEmbeddedPane");
+    if (zefEmbedPane) zefEmbedPane.style.display = "none";
     const zefMount = clone.querySelector("#zeffyScriptMount");
     if (zefMount) zefMount.innerHTML = "";
     const zefIframe = clone.querySelector("#zeffyKioskIframe");
