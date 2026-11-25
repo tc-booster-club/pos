@@ -1781,11 +1781,11 @@
 
     <div class="zeffy-split-grid">
       <div class="zeffy-iframe-pane">
-        <div style="background:#eef2ff; padding:6px 12px; border-bottom:1px solid #cbd5e1; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-          <span style="font-size:0.76rem; font-weight:800; color:#3730a3;">&#128241; Tablet Kiosk Embedded Zeffy Form</span>
-          <div style="display:flex; gap:6px; align-items:center;">
+        <div style="background:#eef2ff; padding:7px 12px; border-bottom:1px solid #cbd5e1; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span style="font-size:0.76rem; font-weight:800; color:#3730a3;">&#128241; Tablet Kiosk Official Zeffy Embed</span>
+          <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
             <button type="button" class="btn-photo" onclick="reloadZeffyIframe()">&#128260; Reload Form</button>
-            <a id="zeffyOpenNewTabLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-photo" style="text-decoration:none; background:#dbeafe; color:#1e3a8a;">Open in New Tab &nearr;</a>
+            <a id="zeffyOpenNewTabLink" href="https://www.zeffy.com/en-US/donation-form/transcom-booster-club-payment" target="_blank" rel="noopener noreferrer" class="btn-photo" style="text-decoration:none; background:#6d28d9; color:#ffffff; font-weight:800; padding:7px 11px;">&#128179; Open Zeffy Payment Page &nearr;</a>
           </div>
         </div>
         <div id="zeffyMissingUrlNotice" style="display:none; padding:28px 20px; text-align:center; margin:auto; max-width:440px;">
@@ -1797,7 +1797,14 @@
             <button type="button" class="btn-add" style="background:#6d28d9;" onclick="saveZeffyUrlSetting('kioskQuickZeffyUrlInput')">Save URL</button>
           </div>
         </div>
-        <iframe id="zeffyKioskIframe" title="Zeffy Checkout Form" allow="payment *; clipboard-write *"></iframe>
+
+        <!-- OFFICIAL ZEFFY CAMPAIGN EMBED + AUTOMATIC /embed/ IFRAME FALLBACK -->
+        <div id="zeffyOfficialEmbedWrap" style="flex:1; display:flex; flex-direction:column; min-height:0; overflow-y:auto; position:relative; background:#ffffff;">
+          <div id="zeffyScriptMount" data-zeffy-embed data-form-url="/embed/donation-form/transcom-booster-club-payment" style="width:100%;"></div>
+          <div id="zeffyIframeFallbackWrap" data-zeffy-embed-fallback style="flex:1; display:flex; flex-direction:column; position:relative; min-height:380px; width:100%;">
+            <iframe id="zeffyKioskIframe" title="Donation form powered by Zeffy" style="border:0; width:100%; flex:1; min-height:380px;" data-zeffy-embed-src="https://www.zeffy.com/embed/donation-form/transcom-booster-club-payment" allow="payment *; clipboard-write *" allowpaymentrequest allowTransparency="true"></iframe>
+          </div>
+        </div>
       </div>
 
       <div class="zeffy-qr-pane">
@@ -4183,6 +4190,60 @@
     return Boolean(el && el.style.display === "flex");
   }
 
+  function deriveZeffyUrls(rawUrl) {
+    let u = String(rawUrl || "").trim();
+    if (!u) return { shareUrl: "", embedUrl: "", embedPath: "" };
+    if (u.indexOf("/embed/") === 0) {
+      u = "https://www.zeffy.com" + u;
+    } else if (!/^https?:\/\//i.test(u)) {
+      u = "https://" + u;
+    }
+    // Convert /en-US/ (or /fr-CA/, etc.) or direct path to official /embed/ path for iframes
+    let embedUrl = u.replace(/https?:\/\/(www\.)?zeffy\.com\/[a-z]{2}-[A-Z]{2}\//i, "https://www.zeffy.com/embed/");
+    if (embedUrl.indexOf("zeffy.com/") !== -1 && embedUrl.indexOf("/embed/") === -1) {
+      embedUrl = embedUrl.replace(/https?:\/\/(www\.)?zeffy\.com\//i, "https://www.zeffy.com/embed/");
+    }
+    // Keep clean public share URL for Phone QR & New Tab Linked Button
+    let shareUrl = u.replace(/https?:\/\/(www\.)?zeffy\.com\/embed\//i, "https://www.zeffy.com/en-US/");
+    let embedPath = embedUrl.replace(/^https?:\/\/(www\.)?zeffy\.com/i, "");
+    return { shareUrl: shareUrl, embedUrl: embedUrl, embedPath: embedPath };
+  }
+
+  let zeffyScriptAttempted = false;
+
+  function ensureZeffyEmbedScriptLoaded() {
+    const scriptMount = document.getElementById("zeffyScriptMount");
+    const fallbackWrap = document.getElementById("zeffyIframeFallbackWrap");
+    const iframe = document.getElementById("zeffyKioskIframe");
+    // Check if Zeffy's v2 script already injected an iframe inside #zeffyScriptMount
+    if (scriptMount && scriptMount.querySelector("iframe")) {
+      if (fallbackWrap) fallbackWrap.style.display = "none";
+      return;
+    }
+    // Always keep the /embed/ fallback iframe active until/unless zeffy-embed.js injects its own
+    if (fallbackWrap) fallbackWrap.style.display = "flex";
+    if (!zeffyScriptAttempted) {
+      zeffyScriptAttempted = true;
+      const s = document.createElement("script");
+      s.src = "https://www.zeffy.com/embed/v2/zeffy-embed.js";
+      s.async = true;
+      s.onload = function() {
+        setTimeout(function() {
+          if (scriptMount && scriptMount.querySelector("iframe")) {
+            if (fallbackWrap) fallbackWrap.style.display = "none";
+          }
+        }, 400);
+      };
+      s.onerror = function() {
+        if (fallbackWrap) fallbackWrap.style.display = "flex";
+        if (iframe && iframe.getAttribute("data-zeffy-embed-src") && !iframe.src) {
+          iframe.src = iframe.getAttribute("data-zeffy-embed-src");
+        }
+      };
+      document.body.appendChild(s);
+    }
+  }
+
   function populateZeffyKioskModalUI() {
     const total = getCartTotal();
     const totalPatches = getPatchCountInCart();
@@ -4205,34 +4266,44 @@
     if (qrAmtEl) qrAmtEl.textContent = "$" + total.toFixed(2);
     if (sumEl) sumEl.textContent = parts.join(" • ") || "Current Order";
 
+    const embedWrap = document.getElementById("zeffyOfficialEmbedWrap");
+    const scriptMount = document.getElementById("zeffyScriptMount");
     const iframe = document.getElementById("zeffyKioskIframe");
     const missingBox = document.getElementById("zeffyMissingUrlNotice");
     const openLink = document.getElementById("zeffyOpenNewTabLink");
     const qrBox = document.getElementById("zeffyQrContainer");
 
-    if (zeffyUrl) {
+    const urls = deriveZeffyUrls(zeffyUrl);
+
+    if (urls.embedUrl) {
       if (missingBox) missingBox.style.display = "none";
+      if (embedWrap) embedWrap.style.display = "flex";
+      if (scriptMount && urls.embedPath) {
+        scriptMount.setAttribute("data-form-url", urls.embedPath);
+      }
       if (iframe) {
-        iframe.style.display = "block";
-        if (iframe.getAttribute("data-loaded-url") !== zeffyUrl) {
-          iframe.src = zeffyUrl;
-          iframe.setAttribute("data-loaded-url", zeffyUrl);
+        iframe.setAttribute("data-zeffy-embed-src", urls.embedUrl);
+        if (iframe.getAttribute("data-loaded-url") !== urls.embedUrl) {
+          iframe.src = urls.embedUrl;
+          iframe.setAttribute("data-loaded-url", urls.embedUrl);
         }
       }
+      ensureZeffyEmbedScriptLoaded();
+
       if (openLink) {
-        openLink.href = zeffyUrl;
+        openLink.href = urls.shareUrl;
         openLink.style.display = "inline-block";
       }
       if (qrBox) {
-        const svgMarkup = generateInlineQrSvg(zeffyUrl, 184);
+        const svgMarkup = generateInlineQrSvg(urls.shareUrl, 184);
         if (svgMarkup) {
           qrBox.innerHTML = svgMarkup;
         } else {
-          qrBox.innerHTML = '<div style="font-size:0.74rem; word-break:break-all; padding:6px; color:#4c1d95;"><strong>Scan Link:</strong><br>' + zeffyUrl.replace(/</g, "&lt;") + '</div>';
+          qrBox.innerHTML = '<div style="font-size:0.74rem; word-break:break-all; padding:6px; color:#4c1d95;"><strong>Scan Link:</strong><br>' + urls.shareUrl.replace(/</g, "&lt;") + '</div>';
         }
       }
     } else {
-      if (iframe) iframe.style.display = "none";
+      if (embedWrap) embedWrap.style.display = "none";
       if (missingBox) missingBox.style.display = "block";
       if (openLink) openLink.style.display = "none";
       if (qrBox) {
@@ -4243,9 +4314,10 @@
 
   function reloadZeffyIframe() {
     const iframe = document.getElementById("zeffyKioskIframe");
-    if (iframe && zeffyUrl) {
-      iframe.src = zeffyUrl;
-      iframe.setAttribute("data-loaded-url", zeffyUrl);
+    const urls = deriveZeffyUrls(zeffyUrl);
+    if (iframe && urls.embedUrl) {
+      iframe.src = urls.embedUrl;
+      iframe.setAttribute("data-loaded-url", urls.embedUrl);
     }
   }
 
@@ -6149,6 +6221,8 @@
     if (niprDlgEl) niprDlgEl.style.display = "none";
     const zefEl = clone.querySelector("#zeffyKioskModal");
     if (zefEl) zefEl.style.display = "none";
+    const zefMount = clone.querySelector("#zeffyScriptMount");
+    if (zefMount) zefMount.innerHTML = "";
     const zefIframe = clone.querySelector("#zeffyKioskIframe");
     if (zefIframe) { zefIframe.removeAttribute("src"); zefIframe.removeAttribute("data-loaded-url"); }
     const drawerEl = clone.querySelector("#cartPanel");
