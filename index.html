@@ -1486,7 +1486,7 @@
 
 <div class="pin-lock-screen" id="pinLockScreen">
   <!-- STEP 1: ONE-TIME DEVICE PIN UNLOCK (Verified securely against Cloudflare Secret ADMIN_PIN via /api) -->
-  <div class="pin-card" id="pinStepCard" style="display:none;">
+  <div class="pin-card" id="pinStepCard">
     <h2>Booster Club POS</h2>
     <p>Device Unlock: Enter Booster Admin PIN / Password</p>
     <div style="margin-bottom:10px;">
@@ -1960,7 +1960,7 @@
     </div>
 
     <div class="zeffy-tip-helper">
-      &#128161; <strong>$0 Optional Tip Helper:</strong> Zeffy adds an optional tip—tap dropdown &rarr; select <strong>'Other'</strong> &rarr; enter <strong>$0</strong>
+      &#128161; <strong>$0 Optional Tip Helper:</strong> Zeffy adds an optional tip&mdash;tap dropdown &rarr; select <strong>'Other'</strong> &rarr; enter <strong>$0</strong>
     </div>
 
     <div class="zeffy-mode-bar">
@@ -2015,7 +2015,7 @@
           </div>
 
           <div id="zeffyMissingUrlCompactNotice" style="display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:8px 10px;">
-            <div style="font-size:0.78rem; font-weight:800; color:#991b1b; margin-bottom:4px;">No Zeffy URL Set Yet — Paste Once to Sync via D1:</div>
+            <div style="font-size:0.78rem; font-weight:800; color:#991b1b; margin-bottom:4px;">No Zeffy URL Set Yet &mdash; Paste Once to Sync via D1:</div>
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
               <input type="text" id="kioskQuickZeffyUrlInput" value="https://www.zeffy.com/en-US/donation-form/transcom-booster-club-payment" autocomplete="off" spellcheck="false" placeholder="https://www.zeffy.com/en-US/..." onclick="this.focus();" style="flex:1; min-width:170px; padding:7px 9px; border:1px solid #c4b5fd; border-radius:6px; font-size:0.82rem;" onkeydown="if(event.key==='Enter'){event.preventDefault();saveZeffyUrlSetting('kioskQuickZeffyUrlInput');}">
               <button type="button" class="btn-photo" style="background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd;" onclick="pasteIntoInputById('kioskQuickZeffyUrlInput')">&#128203; Paste</button>
@@ -2217,7 +2217,7 @@
 
   function cleanDirectorateValue(rawDir) {
     const s = String(rawDir || "").trim();
-    if (!s) return "—";
+    if (!s) return "\u2014";
     if (/GMT|00:00:00|Daylight|Standard Time/i.test(s)) {
       return "TCJ5-4";
     }
@@ -2225,7 +2225,7 @@
   }
 
   function parseBuyerAndSeller(sale) {
-    if (!sale) return { buyer: "Walk-up", seller: "—" };
+    if (!sale) return { buyer: "Walk-up", seller: "\u2014" };
     const rawBuyer = String(sale.buyerName || "Walk-up").trim();
     const match = rawBuyer.match(/^(.*?)\s*\[Sold by:\s*(.+?)\]\s*$/i);
     if (match) {
@@ -2236,7 +2236,7 @@
     }
     return {
       buyer: rawBuyer,
-      seller: sale.sellerName ? String(sale.sellerName).trim() : "—"
+      seller: sale.sellerName ? String(sale.sellerName).trim() : "\u2014"
     };
   }
 
@@ -3942,7 +3942,7 @@
         msg += " (Includes $" + totalKeptChange.toFixed(2) + " in refused/kept change)";
       }
       if (cashBoxConfig.lastUpdated) {
-        msg += " • Last adjusted: " + cashBoxConfig.lastUpdated;
+        msg += " \u2022 Last adjusted: " + cashBoxConfig.lastUpdated;
       }
       subEl.textContent = msg;
     }
@@ -4001,7 +4001,7 @@
           saveState();
           updateCashBoxUI();
           pushSettingsToCloud(true);
-          showNiprNotice("Cash Box Updated!\n\n• Taken to Bank: $" + takenToBank.toFixed(2) + "\n• Change Left in Box: $" + leftInBox.toFixed(2));
+          showNiprNotice("Cash Box Updated!\n\n\u2022 Taken to Bank: $" + takenToBank.toFixed(2) + "\n\u2022 Change Left in Box: $" + leftInBox.toFixed(2));
         }
       });
     });
@@ -4049,7 +4049,7 @@
     const lines = hist.slice(0, 12).map(function(h, i) {
       return (i + 1) + ". [" + (h.timestamp || "") + "] " + (h.action || "Adjustment") +
         " by " + (h.bySeller || "Member") +
-        " — Taken to Bank: $" + (h.takenToBank || "0.00") +
+        " \u2014 Taken to Bank: $" + (h.takenToBank || "0.00") +
         " | Left in Box: $" + (h.leftInBox || "0.00");
     });
     showNiprNotice("RECENT CASH BOX & BANK DEPOSIT LOG (Also included in Master Treasurer CSV):\n\n" + lines.join("\n"));
@@ -4227,7 +4227,7 @@
 
     document.getElementById("buyerName").value = parsed.buyer === "Walk-up" ? "" : parsed.buyer;
     const cleanDir = cleanDirectorateValue(sale.directorate);
-    document.getElementById("buyerDirectorate").value = cleanDir === "—" ? "" : cleanDir;
+    document.getElementById("buyerDirectorate").value = cleanDir === "\u2014" ? "" : cleanDir;
     const existingKeptChange = getOrderKeptChangeAmount(sale);
     keepChangeRefused = existingKeptChange > 0;
     selectPaymentMethod(sale.paymentMethod || "Cash");
@@ -4549,13 +4549,11 @@
     const amtEl = document.getElementById("zeffyExactAmountDisplay");
     const qrAmtEl = document.getElementById("zeffyQrAmountSub");
     const stepAmtEl = document.getElementById("zeffyStepAmtText");
-    const embHdrAmtEl = document.getElementById("zeffyEmbedHeaderAmt");
     const sumEl = document.getElementById("zeffyOrderSummaryLine");
     if (amtEl) amtEl.textContent = formattedAmt;
     if (qrAmtEl) qrAmtEl.textContent = formattedAmt;
     if (stepAmtEl) stepAmtEl.textContent = formattedAmt;
-    if (embHdrAmtEl) embHdrAmtEl.textContent = formattedAmt;
-    if (sumEl) sumEl.textContent = parts.join(" • ") || "Current Order";
+    if (sumEl) sumEl.textContent = parts.join(" \u2022 ") || "Current Order";
 
     const embedWrap = document.getElementById("zeffyOfficialEmbedWrap");
     const missingCompact = document.getElementById("zeffyMissingUrlCompactNotice");
@@ -4653,9 +4651,7 @@
       const cashVal = parseFloat(document.getElementById("cashInput").value) || 0;
       const owes = Math.max(0, total - cashVal);
       showNiprNotice(
-        "Cash Paid ($" + cashVal.toFixed(2) + ") is less than Total Due ($" + total.toFixed(2) + ").
-
-Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount or tap 'Clear' for exact walk-up cash.",
+        "Cash Paid ($" + cashVal.toFixed(2) + ") is less than Total Due ($" + total.toFixed(2) + ").\n\nCustomer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount or tap 'Clear' for exact walk-up cash.",
         "Short Cash Entered"
       );
       return;
@@ -4769,12 +4765,12 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
     let toastSummary = "";
     if (loggedMethod === "Cash") {
       if (keptChangeAmt > 0.004) {
-        toastSummary = (wasEditing ? "✓ Order Updated — $" : "✓ Sale Logged — $") + total.toFixed(2) + " (Cash • Kept $" + keptChangeAmt.toFixed(2) + ")";
+        toastSummary = (wasEditing ? "\u2713 Order Updated \u2014 $" : "\u2713 Sale Logged \u2014 $") + total.toFixed(2) + " (Cash \u2022 Kept $" + keptChangeAmt.toFixed(2) + ")";
       } else {
-        toastSummary = (wasEditing ? "✓ Order Updated — $" : "✓ Sale Logged — $") + total.toFixed(2) + " (Cash • Change: $" + changeGiven.toFixed(2) + ")";
+        toastSummary = (wasEditing ? "\u2713 Order Updated \u2014 $" : "\u2713 Sale Logged \u2014 $") + total.toFixed(2) + " (Cash \u2022 Change: $" + changeGiven.toFixed(2) + ")";
       }
     } else {
-      toastSummary = (wasEditing ? "✓ Order Updated — $" : "✓ Sale Logged — $") + total.toFixed(2) + " (Zeffy)";
+      toastSummary = (wasEditing ? "\u2713 Order Updated \u2014 $" : "\u2713 Sale Logged \u2014 $") + total.toFixed(2) + " (Zeffy)";
     }
 
     if (wasEditing && wasEditing.orderId) {
@@ -4813,7 +4809,7 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
       const parsed = parseBuyerAndSeller(sale);
 
       const confirmMsg =
-        "Buyer: " + parsed.buyer + " (" + (sale.directorate || "—") + ")\n" +
+        "Buyer: " + parsed.buyer + " (" + (sale.directorate || "\u2014") + ")\n" +
         "Total: $" + (sale.total || "0.00") + " (" + (sale.items || "") + ")\n\n" +
         "Clicking Void Order will:\n" +
         "1. Add the sold items back into your Cloudflare D1 Inventory stock counts.\n" +
@@ -5185,7 +5181,7 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
 
         if (!silent) {
           if (dbIsUninitialized) {
-            showNiprNotice("Connected to Cloudflare D1! Your D1 database is currently empty — open Cloud Settings and click 'Force Push Inventory to D1' to initialize stock.");
+            showNiprNotice("Connected to Cloudflare D1! Your D1 database is currently empty \u2014 open Cloud Settings and click 'Force Push Inventory to D1' to initialize stock.");
           } else {
             showNiprNotice("Synced with Cloudflare D1! Loaded " + inventory.length + " items and " + salesLog.length + " orders.");
           }
@@ -5200,205 +5196,6 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
       });
   }
 
-  function migrateLegacyDataToD1() {
-    ensureAdminPinVerified(function() {
-      const urlInput = document.getElementById("legacySheetUrlInput");
-      const gasUrl = (urlInput && urlInput.value.trim()) ? urlInput.value.trim() : LEGACY_GAS_URL_FOR_MIGRATION;
-
-      isSyncing = true;
-      setSyncIndicator("Migrating to D1...", "syncing");
-
-      const fetchSheetUrl = function(u) {
-        if (!u) return Promise.resolve(null);
-        const sep = u.indexOf("?") !== -1 ? "&" : "?";
-        return fetch(u + sep + "t=" + Date.now())
-          .then(function(r) { return r.ok ? r.json().catch(function() { return null; }) : null; })
-          .catch(function() { return null; });
-      };
-
-      Promise.all([
-        fetchSheetUrl(gasUrl),
-        (LEGACY_CLOUD_URL && LEGACY_CLOUD_URL !== gasUrl) ? fetchSheetUrl(LEGACY_CLOUD_URL) : Promise.resolve(null)
-      ]).then(function(results) {
-        const primarySheet = results[0];
-        const olderSheet = results[1];
-
-        let migInventory = JSON.parse(JSON.stringify(inventory));
-        let migSellers = sellersRoster.slice();
-        let migVoided = voidedOrderIds.slice();
-        let migCashBox = JSON.parse(JSON.stringify(cashBoxConfig));
-        let migBaseStocks = Object.assign({}, baseStockMap);
-
-        // Extract settings + inventory from Google Sheet if reachable
-        if (primarySheet && Array.isArray(primarySheet.inventory) && primarySheet.inventory.length > 0) {
-          const settingsRow = primarySheet.inventory.find(function(ci) { return isSettingsRow(ci); });
-          if (settingsRow) {
-            let rawJson = "";
-            const rName = String(settingsRow.name || "").trim();
-            if (typeof settingsRow.image === "string" && settingsRow.image.trim().indexOf("{") === 0) {
-              rawJson = settingsRow.image.trim();
-            } else if (rName.indexOf(SETTINGS_ROW_NAME + ":") === 0) {
-              rawJson = rName.slice((SETTINGS_ROW_NAME + ":").length).trim();
-            }
-            if (rawJson) {
-              try {
-                const ps = JSON.parse(rawJson);
-                if (Array.isArray(ps.sellers) && ps.sellers.length > 0) migSellers = ps.sellers;
-                if (ps.baseStocks && typeof ps.baseStocks === "object") migBaseStocks = Object.assign(migBaseStocks, ps.baseStocks);
-                if (Array.isArray(ps.voidedOrders)) {
-                  ps.voidedOrders.forEach(function(v) {
-                    if (v && migVoided.indexOf(String(v)) === -1) migVoided.push(String(v));
-                  });
-                }
-                if (ps.cashBox && typeof ps.cashBox === "object") {
-                  migCashBox = {
-                    startingCash: parseFloat(ps.cashBox.startingCash) || 0,
-                    baselineSalesCash: parseFloat(ps.cashBox.baselineSalesCash) || 0,
-                    lastUpdated: ps.cashBox.lastUpdated || migCashBox.lastUpdated || "",
-                    history: Array.isArray(ps.cashBox.history) ? ps.cashBox.history : (migCashBox.history || [])
-                  };
-                }
-              } catch (_) {}
-            }
-          }
-
-          const sheetItems = primarySheet.inventory.filter(function(ci) { return ci && !isSettingsRow(ci); });
-          if (sheetItems.length > 0) {
-            migInventory = sanitizeInventory(sheetItems.map(function(ci) {
-              const cName = String(ci.name || "");
-              const loc = inventory.find(function(l) { return l.id == ci.id || String(l.name).toLowerCase() === cName.toLowerCase(); });
-              const prePath = getPreloadedImage(ci.id, cName);
-              const cImg = (typeof ci.image === "string" && (ci.image.indexOf("images/") === 0 || ci.image.indexOf("/images/") === 0 || ci.image.indexOf("data:image") === 0)) ? ci.image : "";
-              const fbImg = (loc && loc.image) ? loc.image : prePath;
-              return {
-                id: ci.id || Date.now() + Math.random(),
-                name: cName,
-                price: parseFloat(ci.price) || 0,
-                isPatchDeal: Boolean(ci.isPatchDeal),
-                stock: parseInt(ci.stock, 10) || 0,
-                image: prePath || cImg || fbImg
-              };
-            }));
-          }
-        }
-
-        // Merge sales from local cache + Google Sheet + Legacy rescue Sheet without duplicates
-        const byOrderId = new Map();
-        const addSalesList = function(list) {
-          if (!Array.isArray(list)) return;
-          list.forEach(function(rawSale) {
-            const norm = normalizeD1SaleForUI(rawSale);
-            if (norm && norm.orderId && !byOrderId.has(String(norm.orderId))) {
-              byOrderId.set(String(norm.orderId), norm);
-            }
-          });
-        };
-        if (primarySheet && Array.isArray(primarySheet.sales)) addSalesList(primarySheet.sales);
-        if (olderSheet && Array.isArray(olderSheet.sales)) addSalesList(olderSheet.sales);
-        addSalesList(salesLog);
-
-        // Chronological order (oldest-first) for clean D1 insertion
-        const mergedChronologicalSales = Array.from(byOrderId.values()).reverse().map(toD1SaleEntry);
-        const d1InvPayload = buildD1InventoryPayload(migInventory);
-
-        const sheetNote = primarySheet && Array.isArray(primarySheet.sales)
-          ? ("Pulled live from Google Sheets + Local Cache")
-          : ("Using Local Browser Cache (Google Sheets URL was unreachable or blocked on this network)");
-
-        showNiprConfirm(
-          "Ready to Migrate to Cloudflare D1",
-          "Source: " + sheetNote + "\n" +
-          "• Inventory Items: " + d1InvPayload.length + " (with photos & stock)\n" +
-          "• Sales Orders: " + mergedChronologicalSales.length + "\n" +
-          "• Sellers in Roster: " + migSellers.length + "\n\n" +
-          "Click Import Now to copy everything into Cloudflare D1.",
-          "Import Now",
-          function() {
-            postToD1Api({
-              action: "migrateFromLegacy",
-              inventory: d1InvPayload,
-              sales: mergedChronologicalSales,
-              voidedOrderIds: migVoided,
-              settings: {
-                sellers: migSellers,
-                cashBox: migCashBox,
-                baseStocks: migBaseStocks,
-                zeffyUrl: zeffyUrl || ""
-              }
-            }, true).then(function(res) {
-              isSyncing = false;
-              lastCloudUpdated = "";
-              safeRemoveStorage("booster_d1_last_updated");
-              showNiprNotice(
-                "• Imported Inventory Items: " + (res.migratedInventory || d1InvPayload.length) + "\n" +
-                "• Imported Sales Orders: " + (res.migratedSales || mergedChronologicalSales.length) + "\n\n" +
-                "Your POS is now running 100% on Cloudflare D1!",
-                "Migration Complete!"
-              );
-              pullInventoryFromCloud(true);
-            }).catch(function(err) {
-              isSyncing = false;
-              updateCloudBadge();
-              showNiprNotice("Migration error: " + err.message, "Migration Error");
-            });
-          },
-          function() {
-            isSyncing = false;
-            updateCloudBadge();
-          }
-        );
-      }).catch(function(err) {
-        isSyncing = false;
-        updateCloudBadge();
-        showNiprNotice("Migration error: " + err.message);
-      });
-    });
-  }
-
-  function recalculateStockFromSalesLog() {
-    if (!salesLog || salesLog.length === 0) {
-      showNiprNotice("Your Sales Log is currently empty, so there are no logged sales to subtract.");
-      return;
-    }
-
-    const soldMap = getSoldQuantitiesFromLog();
-    const summaryLines = [];
-    inventory.forEach(function(item) {
-      const key = String(item.name || "").trim().toLowerCase();
-      const soldQty = soldMap[key] || 0;
-      if (soldQty > 0) {
-        const afterStock = Math.max(0, (parseInt(item.stock, 10) || 0) - soldQty);
-        summaryLines.push("- " + item.name + ": subtract " + soldQty + " sold (Stock " + item.stock + " -> " + afterStock + ")");
-      }
-    });
-
-    if (summaryLines.length === 0) {
-      showNiprNotice("No matching sold items were found in the Sales Log to subtract.");
-      return;
-    }
-
-    const msg = "Found the following sold quantities in your Sales Log:\n\n" +
-      summaryLines.join("\n") +
-      "\n\nClick OK to subtract these sold items from your current stock numbers and update the cloud.";
-
-    showNiprConfirm("Recalculate Stock?", msg, "Update Stock", function() {
-      inventory.forEach(function(item) {
-        const key = String(item.name || "").trim().toLowerCase();
-        const soldQty = soldMap[key] || 0;
-        if (soldQty > 0) {
-          item.stock = Math.max(0, (parseInt(item.stock, 10) || 0) - soldQty);
-          recordExplicitStockSet(item.name, item.stock);
-        }
-      });
-
-      inventoryDirty = true;
-      saveState();
-      renderInventoryTable();
-      renderGrid();
-      renderCart();
-      pushInventoryToCloud(false);
-    });
-  }
 
   function openInventoryModal() {
     ensureAdminPinVerified(function() {
@@ -5578,7 +5375,7 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
     if (inputEl.files && inputEl.files[0]) {
       compressImage(inputEl.files[0], function(img) {
         pendingNewImage = img;
-        document.getElementById("newPhotoLabel").textContent = "Photo Ready ✓";
+        document.getElementById("newPhotoLabel").textContent = "Photo Ready \u2713";
       });
     }
   }
@@ -5959,7 +5756,7 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
       const amt = parseFloat(sale.total) || 0;
       const units = parseInt(sale.totalQty, 10) || 0;
       const parsed = parseBuyerAndSeller(sale);
-      const sellerKey = parsed.seller !== "—" ? parsed.seller : "Unassigned / Prior Sales";
+      const sellerKey = parsed.seller !== "\u2014" ? parsed.seller : "Unassigned / Prior Sales";
       const dirKey = cleanDirectorateValue(sale.directorate);
 
       if (!sellerStats[sellerKey]) sellerStats[sellerKey] = { orders: 0, units: 0, rev: 0 };
@@ -5986,7 +5783,7 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
         sale.lineItems.forEach(function(li) {
           const k = li.itemName;
           if (isSettingsItemName(k) || isCustomOrEventItemName(k)) return;
-          if (!itemStats[k]) itemStats[k] = { qty: 0, rev: 0, stock: "—" };
+          if (!itemStats[k]) itemStats[k] = { qty: 0, rev: 0, stock: "\u2014" };
           itemStats[k].qty += parseInt(li.qty, 10) || 0;
           itemStats[k].rev += parseFloat(li.lineSubtotal) || 0;
         });
@@ -5995,7 +5792,7 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
           if (isSettingsItemName(k) || isCustomOrEventItemName(k)) return;
           const q = parseInt(sale.itemQuantities[k], 10) || 0;
           if (q > 0) {
-            if (!itemStats[k]) itemStats[k] = { qty: 0, rev: 0, stock: "—" };
+            if (!itemStats[k]) itemStats[k] = { qty: 0, rev: 0, stock: "\u2014" };
             itemStats[k].qty += q;
           }
         });
@@ -6108,7 +5905,7 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
     const sumTotalSubEl = document.getElementById("sumTotalSub");
     if (sumTotalSubEl) {
       if (totalEventsRev > 0) {
-        sumTotalSubEl.textContent = "Merch: $" + totalMerchRev.toFixed(2) + " • Events/Don: $" + totalEventsRev.toFixed(2);
+        sumTotalSubEl.textContent = "Merch: $" + totalMerchRev.toFixed(2) + " \u2022 Events/Don: $" + totalEventsRev.toFixed(2);
       } else {
         sumTotalSubEl.textContent = "";
       }
@@ -6121,7 +5918,7 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
     if (sumEventsSubEl) {
       sumEventsSubEl.textContent = totalEventsCount > 0 ? ("+" + totalEventsCount + " Donation/Event entr" + (totalEventsCount === 1 ? "y" : "ies")) : "";
     }
-    document.getElementById("showingCountLabel").textContent = periodDesc + " • Showing " + filteredSales.length + " of " + salesLog.length + " total orders";
+    document.getElementById("showingCountLabel").textContent = periodDesc + " \u2022 Showing " + filteredSales.length + " of " + salesLog.length + " total orders";
     updateCashBoxUI();
 
     if (logViewMode === "breakdown") {
@@ -6172,7 +5969,7 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
           "<td>" + (e.timestamp || "") + "</td>" +
           '<td style="font-weight:700;">' + parsed.buyer + "</td>" +
           "<td>" + dirClean + "</td>" +
-          "<td>" + (parsed.seller !== "—" ? '<span class="seller-badge">' + parsed.seller + '</span>' : "—") + "</td>" +
+          "<td>" + (parsed.seller !== "\u2014" ? '<span class="seller-badge">' + parsed.seller + '</span>' : "\u2014") + "</td>" +
           '<td><span class="pm-badge ' + ((e.paymentMethod === "Zeffy") ? "zeffy" : (isElec ? "electronic" : "")) + '">' + (e.paymentMethod || "Cash") + "</span></td>" +
           '<td style="font-weight:800;">$' + (e.total || "0.00") + "</td>" +
           '<td style="text-align:center; font-weight:800;">' + (e.totalQty || 0) + "</td>" +
@@ -6258,7 +6055,7 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
         "<td>" + (e.timestamp || "") + "</td>" +
         '<td style="font-weight:700;">' + parsed.buyer + "</td>" +
         "<td>" + dirClean + "</td>" +
-        "<td>" + (parsed.seller !== "—" ? '<span class="seller-badge">' + parsed.seller + '</span>' : "—") + "</td>" +
+        "<td>" + (parsed.seller !== "\u2014" ? '<span class="seller-badge">' + parsed.seller + '</span>' : "\u2014") + "</td>" +
         '<td style="text-align:center; font-weight:800;">' + (e.totalQty || 0) + "</td>" +
         "<td>" + breakdownHTML + "</td>" +
         '<td><span class="pm-badge ' + ((e.paymentMethod === "Zeffy") ? "zeffy" : (isElec ? "electronic" : "")) + '">' + (e.paymentMethod || "Cash") + "</span></td>" +
@@ -6306,7 +6103,7 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
         qty: 0,
         rev: 0,
         stdPrice: invMatch ? (Number(invMatch.price) || 0) : 0,
-        stock: invMatch ? (parseInt(invMatch.stock, 10) || 0) : "—"
+        stock: invMatch ? (parseInt(invMatch.stock, 10) || 0) : "\u2014"
       };
     });
     const eventPerf = {};
@@ -6344,7 +6141,7 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
       });
 
       const parsed = parseBuyerAndSeller(s);
-      const sellerKey = parsed.seller !== "—" ? parsed.seller : "Unassigned / Prior Sales";
+      const sellerKey = parsed.seller !== "\u2014" ? parsed.seller : "Unassigned / Prior Sales";
       const dirKey = cleanDirectorateValue(s.directorate);
 
       if (!sellerStats[sellerKey]) sellerStats[sellerKey] = { orders: 0, units: 0, rev: 0 };
@@ -6361,7 +6158,7 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
         s.lineItems.forEach(function(li) {
           const k = li.itemName;
           if (isSettingsItemName(k) || isCustomOrEventItemName(k)) return;
-          if (!itemPerf[k]) itemPerf[k] = { qty: 0, rev: 0, stdPrice: 0, stock: "—" };
+          if (!itemPerf[k]) itemPerf[k] = { qty: 0, rev: 0, stdPrice: 0, stock: "\u2014" };
           itemPerf[k].qty += parseInt(li.qty, 10) || 0;
           itemPerf[k].rev += parseFloat(li.lineSubtotal) || 0;
         });
@@ -6370,7 +6167,7 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
           if (isSettingsItemName(k) || isCustomOrEventItemName(k)) return;
           const q = parseInt(s.itemQuantities[k], 10) || 0;
           if (q > 0) {
-            if (!itemPerf[k]) itemPerf[k] = { qty: 0, rev: 0, stdPrice: 0, stock: "—" };
+            if (!itemPerf[k]) itemPerf[k] = { qty: 0, rev: 0, stdPrice: 0, stock: "\u2014" };
             itemPerf[k].qty += q;
             itemPerf[k].rev += q * (itemPerf[k].stdPrice || 0);
           }
@@ -6419,7 +6216,7 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
         st.rev.toFixed(2),
         avgCharged.toFixed(2),
         st.stock,
-        typeof st.stock === "number" ? remVal.toFixed(2) : "—"
+        typeof st.stock === "number" ? remVal.toFixed(2) : "\u2014"
       ].join(",") + "\n";
     });
     csv += "MERCHANDISE TOTALS,," + totalUnits + ",$" + merchOnlyRev.toFixed(2) + ",,,$" + totalStockVal.toFixed(2) + "\n\n";
@@ -6584,6 +6381,10 @@ Customer still owes $" + owes.toFixed(2) + ". Please enter the full cash amount 
     const clone = document.documentElement.cloneNode(true);
     const lockEl = clone.querySelector("#pinLockScreen");
     if (lockEl) lockEl.style.display = "flex";
+    const pinStepClone = clone.querySelector("#pinStepCard");
+    if (pinStepClone) pinStepClone.style.display = "block";
+    const sellerStepClone = clone.querySelector("#sellerStepCard");
+    if (sellerStepClone) sellerStepClone.style.display = "none";
     const custEl = clone.querySelector("#customEventModal");
     if (custEl) custEl.style.display = "none";
     const invEl = clone.querySelector("#invModal");
