@@ -1824,8 +1824,9 @@
           <button type="button" class="filter-pill" id="filterBtnCustomDate" onclick="toggleCustomDateDrawer()" title="Filter by a Single Date or Custom Date Range">&#128197; Custom Date...</button>
         </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
-          <button type="button" class="btn-action green" onclick="exportMasterBoosterReportCSV()">&#128196; Download Master Treasurer Report (.CSV)</button>
-          <button type="button" class="btn-action" onclick="exportCurrentViewCSV()">&#128229; Export Current View (.CSV)</button>
+          <button type="button" class="btn-action green" onclick="exportTreasurerWorkbookXLSX()" title="Downloads a clean, multi-tab formatted Excel Workbook (.xlsx) with zero wide horizontal scrolling">&#128202; Download Treasurer Excel (.XLSX)</button>
+          <button type="button" class="btn-action" onclick="exportCurrentViewXLSX()" title="Downloads the currently selected view as a clean formatted Excel sheet (.xlsx)">&#128229; Export View (.XLSX)</button>
+          <button type="button" class="btn-action slate" onclick="exportMasterBoosterReportCSV()" title="Plain text CSV backup">CSV</button>
         </div>
         <div class="custom-date-drawer" id="customDateDrawer">
           <div class="date-range-group" id="singleDateGroup" title="Pick a single calendar date to view only that day's sales &amp; events in one click">
@@ -6073,7 +6074,7 @@
   }
 
   function downloadFile(filename, content, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
+    const blob = (content instanceof Blob) ? content : new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -6086,6 +6087,881 @@
 
   function csvEscape(val) {
     return '"' + String(val === undefined || val === null ? "" : val).replace(/"/g, '""') + '"';
+  }
+
+  function shortenItemHeaderName(rawName) {
+    const s = String(rawName || "").trim();
+    const map = {
+      "spinner coin": "Coin",
+      "ocp patch": "OCP Patch",
+      "color patch": "Color Patch",
+      "laynyard - purple": "Purple Lanyard",
+      "lanyard - purple": "Purple Lanyard",
+      "lanyard - black": "Black Lanyard",
+      "stickers": "Stickers",
+      "ornament": "Ornament",
+      "badge reel": "Badge Reel"
+    };
+    const low = s.toLowerCase();
+    if (map[low]) return map[low];
+    return s.length > 15 ? (s.slice(0, 14).trim() + ".") : s;
+  }
+
+  function formatCompactOrderItems(sale) {
+    if (!sale) return "";
+    if (Array.isArray(sale.lineItems) && sale.lineItems.length > 0) {
+      return sale.lineItems.map(function(li) {
+        const q = parseInt(li.qty, 10) || 1;
+        if (isCustomOrEventItemName(li.itemName)) {
+          const pc = parseCustomEventItemName(li.itemName);
+          return (q > 1 ? q + "x " : "") + "[" + pc.category + "] " + pc.title + " ($" + (parseFloat(li.lineSubtotal) || 0).toFixed(2) + ")";
+        }
+        return q + "x " + shortenItemHeaderName(li.itemName) + " ($" + (parseFloat(li.lineSubtotal) || 0).toFixed(2) + ")";
+      }).join(", ");
+    }
+    return String(sale.items || "").replace(/;\s*/g, ", ");
+  }
+
+  function formatShortTimestamp(ts) {
+    const raw = String(ts || "").trim();
+    if (!raw) return "";
+    return raw.replace(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}):\d{2}$/, "$1 $2");
+  }
+
+  // ============================================================================
+  // 100% OFFLINE PURE-JS EXCEL (.XLSX) WORKBOOK GENERATOR (ZERO EXTERNAL LIBS)
+  // ============================================================================
+  const XLSX_CRC32_TABLE = (function() {
+    const tbl = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let k = 0; k < 8; k++) {
+        c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      }
+      tbl[i] = c >>> 0;
+    }
+    return tbl;
+  })();
+
+  function xlsxUtf8Bytes(str) {
+    if (typeof TextEncoder !== "undefined") {
+      return new TextEncoder().encode(String(str || ""));
+    }
+    const utf8 = unescape(encodeURIComponent(String(str || "")));
+    const arr = new Uint8Array(utf8.length);
+    for (let i = 0; i < utf8.length; i++) arr[i] = utf8.charCodeAt(i);
+    return arr;
+  }
+
+  function xlsxCrc32(bytes) {
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) {
+      crc = XLSX_CRC32_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function writeU16LE(buf, pos, val) {
+    buf[pos] = val & 0xFF;
+    buf[pos + 1] = (val >>> 8) & 0xFF;
+  }
+
+  function writeU32LE(buf, pos, val) {
+    buf[pos] = val & 0xFF;
+    buf[pos + 1] = (val >>> 8) & 0xFF;
+    buf[pos + 2] = (val >>> 16) & 0xFF;
+    buf[pos + 3] = (val >>> 24) & 0xFF;
+  }
+
+  function buildStoredZipBlob(fileEntries) {
+    const localChunks = [];
+    const centralChunks = [];
+    let offset = 0;
+
+    for (let i = 0; i < fileEntries.length; i++) {
+      const nameBytes = xlsxUtf8Bytes(fileEntries[i].name);
+      const dataBytes = fileEntries[i].data;
+      const crc = xlsxCrc32(dataBytes);
+      const size = dataBytes.length;
+
+      const lh = new Uint8Array(30 + nameBytes.length);
+      writeU32LE(lh, 0, 0x04034b50);
+      writeU16LE(lh, 4, 20);
+      writeU16LE(lh, 6, 0x0800);
+      writeU16LE(lh, 8, 0);
+      writeU16LE(lh, 10, 0);
+      writeU16LE(lh, 12, 0x0021);
+      writeU32LE(lh, 14, crc);
+      writeU32LE(lh, 18, size);
+      writeU32LE(lh, 22, size);
+      writeU16LE(lh, 26, nameBytes.length);
+      writeU16LE(lh, 28, 0);
+      lh.set(nameBytes, 30);
+
+      localChunks.push(lh, dataBytes);
+
+      const ch = new Uint8Array(46 + nameBytes.length);
+      writeU32LE(ch, 0, 0x02014b50);
+      writeU16LE(ch, 4, 20);
+      writeU16LE(ch, 6, 20);
+      writeU16LE(ch, 8, 0x0800);
+      writeU16LE(ch, 10, 0);
+      writeU16LE(ch, 12, 0);
+      writeU16LE(ch, 14, 0x0021);
+      writeU32LE(ch, 16, crc);
+      writeU32LE(ch, 20, size);
+      writeU32LE(ch, 24, size);
+      writeU16LE(ch, 28, nameBytes.length);
+      writeU16LE(ch, 30, 0);
+      writeU16LE(ch, 32, 0);
+      writeU16LE(ch, 34, 0);
+      writeU16LE(ch, 36, 0);
+      writeU32LE(ch, 38, 0);
+      writeU32LE(ch, 42, offset);
+      ch.set(nameBytes, 46);
+
+      centralChunks.push(ch);
+      offset += lh.length + size;
+    }
+
+    let centralSize = 0;
+    for (let i = 0; i < centralChunks.length; i++) centralSize += centralChunks[i].length;
+
+    const eocd = new Uint8Array(22);
+    writeU32LE(eocd, 0, 0x06054b50);
+    writeU16LE(eocd, 4, 0);
+    writeU16LE(eocd, 6, 0);
+    writeU16LE(eocd, 8, fileEntries.length);
+    writeU16LE(eocd, 10, fileEntries.length);
+    writeU32LE(eocd, 12, centralSize);
+    writeU32LE(eocd, 16, offset);
+    writeU16LE(eocd, 20, 0);
+
+    return new Blob(localChunks.concat(centralChunks, [eocd]), {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    });
+  }
+
+  function xlsxColLetter(col1Based) {
+    let s = "";
+    let n = col1Based;
+    while (n > 0) {
+      const r = (n - 1) % 26;
+      s = String.fromCharCode(65 + r) + s;
+      n = Math.floor((n - 1) / 26);
+    }
+    return s;
+  }
+
+  function xlsxXmlEscape(val) {
+    const raw = String(val === undefined || val === null ? "" : val)
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
+    return raw
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function xlsxCell(val, styleIdx, cellType) {
+    return { v: val, s: styleIdx || 0, t: cellType || "s" };
+  }
+
+  function buildXlsxWorksheetXml(colWidths, rowsList, mergeRefs, freezeTopRows) {
+    const parts = [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+    ];
+    if (freezeTopRows && freezeTopRows > 0) {
+      parts.push(
+        '<sheetViews><sheetView workbookViewId="0">' +
+        '<pane ySplit="' + freezeTopRows + '" topLeftCell="A' + (freezeTopRows + 1) + '" activePane="bottomLeft" state="frozen"/>' +
+        '</sheetView></sheetViews>'
+      );
+    }
+    parts.push('<sheetFormatPr defaultRowHeight="19"/>');
+    if (Array.isArray(colWidths) && colWidths.length > 0) {
+      parts.push('<cols>');
+      for (let i = 0; i < colWidths.length; i++) {
+        const idx = i + 1;
+        parts.push('<col min="' + idx + '" max="' + idx + '" width="' + colWidths[i] + '" customWidth="1"/>');
+      }
+      parts.push('</cols>');
+    }
+    parts.push('<sheetData>');
+    for (let r = 0; r < rowsList.length; r++) {
+      const rowObj = rowsList[r];
+      const rNum = r + 1;
+      const cells = Array.isArray(rowObj) ? rowObj : (rowObj.cells || []);
+      const htAttr = (rowObj && rowObj.height) ? (' ht="' + rowObj.height + '" customHeight="1"') : "";
+      parts.push('<row r="' + rNum + '"' + htAttr + '>');
+      for (let c = 0; c < cells.length; c++) {
+        const cell = cells[c];
+        if (!cell) continue;
+        const ref = xlsxColLetter(c + 1) + rNum;
+        const st = cell.s || 0;
+        if (cell.t === "n" && cell.v !== "" && cell.v !== null && !isNaN(Number(cell.v))) {
+          parts.push('<c r="' + ref + '" s="' + st + '"><v>' + Number(cell.v) + '</v></c>');
+        } else {
+          parts.push('<c r="' + ref + '" s="' + st + '" t="inlineStr"><is><t xml:space="preserve">' + xlsxXmlEscape(cell.v) + '</t></is></c>');
+        }
+      }
+      parts.push('</row>');
+    }
+    parts.push('</sheetData>');
+    if (Array.isArray(mergeRefs) && mergeRefs.length > 0) {
+      parts.push('<mergeCells count="' + mergeRefs.length + '">');
+      for (let m = 0; m < mergeRefs.length; m++) {
+        parts.push('<mergeCell ref="' + mergeRefs[m] + '"/>');
+      }
+      parts.push('</mergeCells>');
+    }
+    parts.push('<pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/>');
+    parts.push('</worksheet>');
+    return parts.join("");
+  }
+
+  function getTreasurerStylesXml() {
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<numFmts count="2">' +
+        '<numFmt numFmtId="164" formatCode="$#,##0.00"/>' +
+        '<numFmt numFmtId="165" formatCode="#,##0"/>' +
+      '</numFmts>' +
+      '<fonts count="6">' +
+        '<font><sz val="10"/><color rgb="FF0F172A"/><name val="Calibri"/></font>' +
+        '<font><b/><sz val="13"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>' +
+        '<font><b/><sz val="10"/><color rgb="FF1E3A8A"/><name val="Calibri"/></font>' +
+        '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>' +
+        '<font><b/><sz val="10"/><color rgb="FF15803D"/><name val="Calibri"/></font>' +
+        '<font><b/><sz val="10"/><color rgb="FF14532D"/><name val="Calibri"/></font>' +
+      '</fonts>' +
+      '<fills count="6">' +
+        '<fill><patternFill patternType="none"/></fill>' +
+        '<fill><patternFill patternType="gray125"/></fill>' +
+        '<fill><patternFill patternType="solid"><fgColor rgb="FF1E3A8A"/></patternFill></fill>' +
+        '<fill><patternFill patternType="solid"><fgColor rgb="FFEFF6FF"/></patternFill></fill>' +
+        '<fill><patternFill patternType="solid"><fgColor rgb="FF334155"/></patternFill></fill>' +
+        '<fill><patternFill patternType="solid"><fgColor rgb="FFDCFCE7"/></patternFill></fill>' +
+      '</fills>' +
+      '<borders count="3">' +
+        '<border><left/><right/><top/><bottom/><diagonal/></border>' +
+        '<border>' +
+          '<left style="thin"><color rgb="FFCBD5E1"/></left>' +
+          '<right style="thin"><color rgb="FFCBD5E1"/></right>' +
+          '<top style="thin"><color rgb="FFCBD5E1"/></top>' +
+          '<bottom style="thin"><color rgb="FFCBD5E1"/></bottom>' +
+          '<diagonal/>' +
+        '</border>' +
+        '<border>' +
+          '<left style="thin"><color rgb="FF86EFAC"/></left>' +
+          '<right style="thin"><color rgb="FF86EFAC"/></right>' +
+          '<top style="medium"><color rgb="FF16A34A"/></top>' +
+          '<bottom style="double"><color rgb="FF16A34A"/></bottom>' +
+          '<diagonal/>' +
+        '</border>' +
+      '</borders>' +
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+      '<cellXfs count="15">' +
+        '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+        '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>' +
+        '<xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>' +
+        '<xf numFmtId="0" fontId="3" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>' +
+        '<xf numFmtId="0" fontId="3" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>' +
+        '<xf numFmtId="0" fontId="3" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +
+        '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>' +
+        '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>' +
+        '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' +
+        '<xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' +
+        '<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' +
+        '<xf numFmtId="164" fontId="4" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' +
+        '<xf numFmtId="0" fontId="5" fillId="5" borderId="2" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>' +
+        '<xf numFmtId="165" fontId="5" fillId="5" borderId="2" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' +
+        '<xf numFmtId="164" fontId="5" fillId="5" borderId="2" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>' +
+      '</cellXfs>' +
+      '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+      '</styleSheet>';
+  }
+
+  function downloadWorkbookXlsx(filename, sheetsArray) {
+    let ctOverrides = "";
+    let wbSheets = "";
+    let wbRels = "";
+
+    for (let i = 0; i < sheetsArray.length; i++) {
+      const idx = i + 1;
+      const safeTabName = String(sheetsArray[i].name || ("Sheet" + idx)).replace(/[\[\]\*\?\/\\:]/g, " ").slice(0, 31);
+      ctOverrides += '<Override PartName="/xl/worksheets/sheet' + idx + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+      wbSheets += '<sheet name="' + xlsxXmlEscape(safeTabName) + '" sheetId="' + idx + '" r:id="rId' + idx + '"/>';
+      wbRels += '<Relationship Id="rId' + idx + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + idx + '.xml"/>';
+    }
+    wbRels += '<Relationship Id="rId' + (sheetsArray.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>';
+
+    const contentTypesXml =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+      '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+      ctOverrides + '</Types>';
+
+    const rootRelsXml =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+      '</Relationships>';
+
+    const workbookXml =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      '<sheets>' + wbSheets + '</sheets></workbook>';
+
+    const workbookRelsXml =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      wbRels + '</Relationships>';
+
+    const zipEntries = [
+      { name: "[Content_Types].xml", data: xlsxUtf8Bytes(contentTypesXml) },
+      { name: "_rels/.rels", data: xlsxUtf8Bytes(rootRelsXml) },
+      { name: "xl/workbook.xml", data: xlsxUtf8Bytes(workbookXml) },
+      { name: "xl/_rels/workbook.xml.rels", data: xlsxUtf8Bytes(workbookRelsXml) },
+      { name: "xl/styles.xml", data: xlsxUtf8Bytes(getTreasurerStylesXml()) }
+    ];
+    for (let i = 0; i < sheetsArray.length; i++) {
+      zipEntries.push({
+        name: "xl/worksheets/sheet" + (i + 1) + ".xml",
+        data: xlsxUtf8Bytes(sheetsArray[i].xml)
+      });
+    }
+
+    const blob = buildStoredZipBlob(zipEntries);
+    downloadFile(filename, blob, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  }
+
+  function computeTreasurerReportData() {
+    const filteredSales = getFilteredSalesLog();
+    const allItemNames = getAllMatrixItemNames();
+    const periodLabel = getActiveFilterPeriodDescription();
+    const fileSlug = getActiveFilterFilenameSlug();
+
+    let totalRev = 0, merchOnlyRev = 0, eventsOnlyRev = 0, eventsOnlyCount = 0, cashRev = 0, keptChangeRev = 0, elecRev = 0, totalUnits = 0;
+    const methodTotals = { "Cash": 0, "Zeffy": 0, "Card": 0, "PayPal": 0, "Venmo/Digital": 0 };
+    const itemPerf = {};
+    allItemNames.forEach(function(name) {
+      const invMatch = inventory.find(function(i) { return i.name === name; });
+      itemPerf[name] = {
+        qty: 0,
+        rev: 0,
+        stdPrice: invMatch ? (Number(invMatch.price) || 0) : 0,
+        stock: invMatch ? (parseInt(invMatch.stock, 10) || 0) : null
+      };
+    });
+    const eventPerf = {};
+    const sellerStats = {};
+    const dirStats = {};
+
+    filteredSales.forEach(function(s) {
+      if (!s) return;
+      const amt = parseFloat(s.total) || 0;
+      const units = parseInt(s.totalQty, 10) || 0;
+      const pm = s.paymentMethod || "Cash";
+      const customInfo = getOrderCustomEventsBreakdown(s);
+
+      totalRev += amt;
+      eventsOnlyRev += customInfo.eventsRev;
+      eventsOnlyCount += customInfo.eventsQty;
+      merchOnlyRev += Math.max(0, amt - customInfo.eventsRev);
+      totalUnits += units;
+
+      if (pm === "Cash") {
+        cashRev += amt;
+        keptChangeRev += getOrderKeptChangeAmount(s);
+      } else {
+        elecRev += amt;
+      }
+      methodTotals[pm] = (methodTotals[pm] || 0) + amt;
+
+      customInfo.events.forEach(function(ev) {
+        const k = ev.fullName;
+        if (!eventPerf[k]) {
+          eventPerf[k] = { category: ev.category, title: ev.title, qty: 0, rev: 0 };
+        }
+        eventPerf[k].qty += ev.qty;
+        eventPerf[k].rev += ev.subtotal;
+      });
+
+      const parsed = parseBuyerAndSeller(s);
+      const sellerKey = parsed.seller !== "\u2014" ? parsed.seller : "Unassigned / Prior Sales";
+      const dirKey = cleanDirectorateValue(s.directorate);
+
+      if (!sellerStats[sellerKey]) sellerStats[sellerKey] = { orders: 0, units: 0, rev: 0 };
+      sellerStats[sellerKey].orders += 1;
+      sellerStats[sellerKey].units += units;
+      sellerStats[sellerKey].rev += amt;
+
+      if (!dirStats[dirKey]) dirStats[dirKey] = { orders: 0, units: 0, rev: 0 };
+      dirStats[dirKey].orders += 1;
+      dirStats[dirKey].units += units;
+      dirStats[dirKey].rev += amt;
+
+      if (Array.isArray(s.lineItems) && s.lineItems.length > 0) {
+        s.lineItems.forEach(function(li) {
+          const k = li.itemName;
+          if (isSettingsItemName(k) || isCustomOrEventItemName(k)) return;
+          if (!itemPerf[k]) itemPerf[k] = { qty: 0, rev: 0, stdPrice: 0, stock: null };
+          itemPerf[k].qty += parseInt(li.qty, 10) || 0;
+          itemPerf[k].rev += parseFloat(li.lineSubtotal) || 0;
+        });
+      } else if (s.itemQuantities) {
+        Object.keys(s.itemQuantities).forEach(function(k) {
+          if (isSettingsItemName(k) || isCustomOrEventItemName(k)) return;
+          const q = parseInt(s.itemQuantities[k], 10) || 0;
+          if (q > 0) {
+            if (!itemPerf[k]) itemPerf[k] = { qty: 0, rev: 0, stdPrice: 0, stock: null };
+            itemPerf[k].qty += q;
+            itemPerf[k].rev += q * (itemPerf[k].stdPrice || 0);
+          }
+        });
+      }
+    });
+
+    return {
+      filteredSales: filteredSales,
+      allItemNames: allItemNames,
+      periodLabel: periodLabel,
+      fileSlug: fileSlug,
+      totalRev: totalRev,
+      merchOnlyRev: merchOnlyRev,
+      eventsOnlyRev: eventsOnlyRev,
+      eventsOnlyCount: eventsOnlyCount,
+      cashRev: cashRev,
+      keptChangeRev: keptChangeRev,
+      elecRev: elecRev,
+      totalUnits: totalUnits,
+      methodTotals: methodTotals,
+      itemPerf: itemPerf,
+      eventPerf: eventPerf,
+      sellerStats: sellerStats,
+      dirStats: dirStats
+    };
+  }
+
+  function buildSalesLedgerSheetXml(filteredSales, periodLabel, totalRev, totalUnits, keptChangeRev) {
+    // 8 compact columns that fit 100% on one laptop screen (total width ~124 chars, zero right-scrolling!)
+    const widths = [17, 19, 11, 15, 10, 42, 8, 13, 12];
+    const merges = ["A1:I1", "A2:I2"];
+    const rows = [
+      { height: 26, cells: [
+        xlsxCell("USTRANSCOM BOOSTER CLUB - SALES LEDGER", 1),
+        xlsxCell("", 1), xlsxCell("", 1), xlsxCell("", 1), xlsxCell("", 1), xlsxCell("", 1), xlsxCell("", 1), xlsxCell("", 1), xlsxCell("", 1)
+      ]},
+      { height: 20, cells: [
+        xlsxCell("Period: " + periodLabel + "   |   Orders: " + filteredSales.length + "   |   Generated: " + getFormattedTimestamp(), 2),
+        xlsxCell("", 2), xlsxCell("", 2), xlsxCell("", 2), xlsxCell("", 2), xlsxCell("", 2), xlsxCell("", 2), xlsxCell("", 2), xlsxCell("", 2)
+      ]},
+      { height: 24, cells: [
+        xlsxCell("Date / Time", 4),
+        xlsxCell("Buyer", 4),
+        xlsxCell("Dir", 5),
+        xlsxCell("Seller", 4),
+        xlsxCell("Method", 5),
+        xlsxCell("Items & Events Purchased", 4),
+        xlsxCell("Qty", 5),
+        xlsxCell("Order Total", 5),
+        xlsxCell("Kept Chg", 5)
+      ]}
+    ];
+
+    if (filteredSales.length === 0) {
+      rows.push([
+        xlsxCell("No sales recorded in this period.", 6),
+        xlsxCell("", 6), xlsxCell("", 6), xlsxCell("", 6), xlsxCell("", 6), xlsxCell("", 6),
+        xlsxCell(0, 9, "n"), xlsxCell(0, 10, "n"), xlsxCell(0, 10, "n")
+      ]);
+    } else {
+      filteredSales.forEach(function(r) {
+        if (!r) return;
+        const parsed = parseBuyerAndSeller(r);
+        const kept = getOrderKeptChangeAmount(r);
+        const compactItems = formatCompactOrderItems(r);
+        const estLines = Math.max(1, Math.ceil(compactItems.length / 40));
+        rows.push({
+          height: estLines > 1 ? Math.min(66, 18 * estLines) : 19,
+          cells: [
+            xlsxCell(formatShortTimestamp(r.timestamp), 6),
+            xlsxCell(parsed.buyer, 6),
+            xlsxCell(cleanDirectorateValue(r.directorate), 8),
+            xlsxCell(parsed.seller, 6),
+            xlsxCell(r.paymentMethod || "Cash", 8),
+            xlsxCell(compactItems, 7),
+            xlsxCell(parseInt(r.totalQty, 10) || 0, 9, "n"),
+            xlsxCell(parseFloat(r.total) || 0, 11, "n"),
+            xlsxCell(kept, 10, "n")
+          ]
+        });
+      });
+    }
+
+    rows.push({
+      height: 22,
+      cells: [
+        xlsxCell("PERIOD TOTALS (" + filteredSales.length + " Orders)", 12),
+        xlsxCell("", 12), xlsxCell("", 12), xlsxCell("", 12), xlsxCell("", 12), xlsxCell("", 12),
+        xlsxCell(totalUnits, 13, "n"),
+        xlsxCell(Number(totalRev.toFixed(2)), 14, "n"),
+        xlsxCell(Number(keptChangeRev.toFixed(2)), 14, "n")
+      ]
+    });
+
+    return buildXlsxWorksheetXml(widths, rows, merges, 3);
+  }
+
+  function buildItemMatrixSheetXml(d) {
+    // Separate tab for per-item quantities using SHORT item names & narrow 10-char columns!
+    const widths = [16, 17, 10, 10, 12].concat(d.allItemNames.map(function() { return 11; }));
+    const totalCols = widths.length;
+    const lastColLet = xlsxColLetter(totalCols);
+    const merges = ["A1:" + lastColLet + "1", "A2:" + lastColLet + "2"];
+
+    const padRow = function(firstText, st) {
+      const arr = [xlsxCell(firstText, st)];
+      for (let i = 1; i < totalCols; i++) arr.push(xlsxCell("", st));
+      return arr;
+    };
+
+    const hdrCells = [
+      xlsxCell("Date / Time", 4),
+      xlsxCell("Buyer", 4),
+      xlsxCell("Dir", 5),
+      xlsxCell("Method", 5),
+      xlsxCell("Total ($)", 5)
+    ];
+    d.allItemNames.forEach(function(itemName) {
+      hdrCells.push(xlsxCell(shortenItemHeaderName(itemName), 5));
+    });
+
+    const rows = [
+      { height: 26, cells: padRow("USTRANSCOM BOOSTER CLUB - COMPACT ITEM QUANTITY MATRIX", 1) },
+      { height: 20, cells: padRow("Period: " + d.periodLabel + "   |   Shortened Item Headers for Easy Viewing", 2) },
+      { height: 28, cells: hdrCells }
+    ];
+
+    const colTotals = {};
+    d.allItemNames.forEach(function(n) { colTotals[n] = 0; });
+
+    d.filteredSales.forEach(function(r) {
+      if (!r) return;
+      const parsed = parseBuyerAndSeller(r);
+      const rowCells = [
+        xlsxCell(formatShortTimestamp(r.timestamp), 6),
+        xlsxCell(parsed.buyer, 6),
+        xlsxCell(cleanDirectorateValue(r.directorate), 8),
+        xlsxCell(r.paymentMethod || "Cash", 8),
+        xlsxCell(parseFloat(r.total) || 0, 10, "n")
+      ];
+      d.allItemNames.forEach(function(itemName) {
+        const q = (r.itemQuantities && r.itemQuantities[itemName]) ? parseInt(r.itemQuantities[itemName], 10) : 0;
+        colTotals[itemName] += q;
+        rowCells.push(q > 0 ? xlsxCell(q, 9, "n") : xlsxCell("", 8));
+      });
+      rows.push(rowCells);
+    });
+
+    const totCells = [
+      xlsxCell("TOTAL UNITS SOLD", 12),
+      xlsxCell("", 12),
+      xlsxCell("", 12),
+      xlsxCell("", 12),
+      xlsxCell(Number(d.totalRev.toFixed(2)), 14, "n")
+    ];
+    d.allItemNames.forEach(function(itemName) {
+      totCells.push(xlsxCell(colTotals[itemName], 13, "n"));
+    });
+    rows.push({ height: 22, cells: totCells });
+
+    return buildXlsxWorksheetXml(widths, rows, merges, 3);
+  }
+
+  function exportTreasurerWorkbookXLSX() {
+    const d = computeTreasurerReportData();
+
+    // TAB 1: EXECUTIVE SUMMARY & INVENTORY (6 neat columns A..F, ~105 width total -> fits 100% on laptop screen!)
+    const sumWidths = [28, 15, 13, 15, 13, 16];
+    const sumMerges = ["A1:F1", "A2:F2"];
+    const sumRows = [
+      { height: 28, cells: [
+        xlsxCell("USTRANSCOM BOOSTER CLUB - TREASURER & INVENTORY REPORT", 1),
+        xlsxCell("", 1), xlsxCell("", 1), xlsxCell("", 1), xlsxCell("", 1), xlsxCell("", 1)
+      ]},
+      { height: 20, cells: [
+        xlsxCell("Period: " + d.periodLabel + "   |   Generated: " + getFormattedTimestamp(), 2),
+        xlsxCell("", 2), xlsxCell("", 2), xlsxCell("", 2), xlsxCell("", 2), xlsxCell("", 2)
+      ]},
+      { height: 8, cells: [] }
+    ];
+
+    const addSectionBanner = function(rowsArr, mergesArr, titleText) {
+      const rIdx = rowsArr.length + 1;
+      mergesArr.push("A" + rIdx + ":F" + rIdx);
+      rowsArr.push({
+        height: 22,
+        cells: [xlsxCell(titleText, 3), xlsxCell("", 3), xlsxCell("", 3), xlsxCell("", 3), xlsxCell("", 3), xlsxCell("", 3)]
+      });
+    };
+
+    // Side-by-Side Executive KPIs (Cols A-B: Revenue Breakdown | Cols D-E: Cash Box & Order Counts)
+    addSectionBanner(sumRows, sumMerges, "1. EXECUTIVE REVENUE & PHYSICAL CASH BOX SUMMARY");
+    sumRows.push({
+      height: 22,
+      cells: [
+        xlsxCell("Revenue Metric", 4), xlsxCell("Amount", 5), xlsxCell("", 0),
+        xlsxCell("Cash Box & Volume Metric", 4), xlsxCell("Value", 5), xlsxCell("Notes", 4)
+      ]
+    });
+
+    const liveBox = getPhysicalCashInBox();
+    const floatStart = parseFloat(cashBoxConfig.startingCash) || 0;
+    const legacyDigitalRev = (d.methodTotals["Card"] || 0) + (d.methodTotals["PayPal"] || 0) + (d.methodTotals["Venmo/Digital"] || 0);
+
+    sumRows.push([
+      xlsxCell("Merchandise Sales Revenue", 6), xlsxCell(Number(d.merchOnlyRev.toFixed(2)), 10, "n"), xlsxCell("", 0),
+      xlsxCell("Live Physical Cash in Box", 12), xlsxCell(Number(liveBox.toFixed(2)), 14, "n"), xlsxCell("Count bills against this", 6)
+    ]);
+    sumRows.push([
+      xlsxCell("Donations & Events Revenue", 6), xlsxCell(Number(d.eventsOnlyRev.toFixed(2)), 10, "n"), xlsxCell("", 0),
+      xlsxCell("Starting Change / Float", 6), xlsxCell(Number(floatStart.toFixed(2)), 10, "n"), xlsxCell("Left from last deposit", 6)
+    ]);
+    sumRows.push([
+      xlsxCell("Refused / Kept Change", 6), xlsxCell(Number(d.keptChangeRev.toFixed(2)), 10, "n"), xlsxCell("", 0),
+      xlsxCell("Period Cash Collected", 6), xlsxCell(Number((d.cashRev + d.keptChangeRev).toFixed(2)), 11, "n"), xlsxCell("Cash sales + kept chg", 6)
+    ]);
+    sumRows.push([
+      xlsxCell("Zeffy Electronic Orders", 6), xlsxCell(Number((d.methodTotals["Zeffy"] || 0).toFixed(2)), 10, "n"), xlsxCell("", 0),
+      xlsxCell("Completed Orders", 6), xlsxCell(d.filteredSales.length, 9, "n"), xlsxCell("In selected period", 6)
+    ]);
+    if (legacyDigitalRev > 0.004) {
+      sumRows.push([
+        xlsxCell("Prior Digital (Card/Venmo)", 6), xlsxCell(Number(legacyDigitalRev.toFixed(2)), 10, "n"), xlsxCell("", 0),
+        xlsxCell("Merchandise Units Sold", 6), xlsxCell(d.totalUnits, 9, "n"), xlsxCell("Excludes donations", 6)
+      ]);
+    } else {
+      sumRows.push([
+        xlsxCell("Total Electronic Orders", 6), xlsxCell(Number(d.elecRev.toFixed(2)), 10, "n"), xlsxCell("", 0),
+        xlsxCell("Merchandise Units Sold", 6), xlsxCell(d.totalUnits, 9, "n"), xlsxCell("Excludes donations", 6)
+      ]);
+    }
+    sumRows.push({
+      height: 22,
+      cells: [
+        xlsxCell("GRAND TOTAL COLLECTED", 12), xlsxCell(Number((d.totalRev + d.keptChangeRev).toFixed(2)), 14, "n"), xlsxCell("", 0),
+        xlsxCell("Donation / Event Entries", 6), xlsxCell(d.eventsOnlyCount, 9, "n"), xlsxCell("Zero stock impact", 6)
+      ]
+    });
+
+    sumRows.push({ height: 10, cells: [] });
+
+    // Section 2: Merchandise Breakdown (Columns A..F)
+    addSectionBanner(sumRows, sumMerges, "2. MERCHANDISE SALES & LIVE INVENTORY VALUATION");
+    sumRows.push({
+      height: 24,
+      cells: [
+        xlsxCell("Merchandise Item", 4),
+        xlsxCell("Std Price", 5),
+        xlsxCell("Units Sold", 5),
+        xlsxCell("Gross Revenue", 5),
+        xlsxCell("Stock Left", 5),
+        xlsxCell("Stock Value", 5)
+      ]
+    });
+
+    let totalStockUnits = 0;
+    let totalStockVal = 0;
+    Object.keys(d.itemPerf).forEach(function(name) {
+      const st = d.itemPerf[name];
+      const hasStock = typeof st.stock === "number";
+      const remVal = hasStock ? (st.stock * st.stdPrice) : 0;
+      if (hasStock) {
+        totalStockUnits += st.stock;
+        totalStockVal += remVal;
+      }
+      sumRows.push([
+        xlsxCell(name, 6),
+        xlsxCell(Number(st.stdPrice.toFixed(2)), 10, "n"),
+        xlsxCell(st.qty, 9, "n"),
+        xlsxCell(Number(st.rev.toFixed(2)), 11, "n"),
+        hasStock ? xlsxCell(st.stock, 9, "n") : xlsxCell("-", 8),
+        hasStock ? xlsxCell(Number(remVal.toFixed(2)), 10, "n") : xlsxCell("-", 8)
+      ]);
+    });
+    sumRows.push({
+      height: 22,
+      cells: [
+        xlsxCell("MERCHANDISE TOTALS", 12),
+        xlsxCell("", 12),
+        xlsxCell(d.totalUnits, 13, "n"),
+        xlsxCell(Number(d.merchOnlyRev.toFixed(2)), 14, "n"),
+        xlsxCell(totalStockUnits, 13, "n"),
+        xlsxCell(Number(totalStockVal.toFixed(2)), 14, "n")
+      ]
+    });
+
+    sumRows.push({ height: 10, cells: [] });
+
+    // Section 3: Donations & One-Time Events
+    addSectionBanner(sumRows, sumMerges, "3. DONATIONS, FUNDRAISERS & ONE-TIME EVENTS");
+    sumRows.push({
+      height: 22,
+      cells: [
+        xlsxCell("Event / Donation Title", 4),
+        xlsxCell("Category", 5),
+        xlsxCell("Entries", 5),
+        xlsxCell("Total Raised", 5),
+        xlsxCell("", 4),
+        xlsxCell("Notes", 4)
+      ]
+    });
+    const evKeys = Object.keys(d.eventPerf);
+    if (evKeys.length === 0) {
+      sumRows.push([
+        xlsxCell("No donations or special events in this period", 6),
+        xlsxCell("-", 8), xlsxCell(0, 9, "n"), xlsxCell(0, 10, "n"), xlsxCell("", 6), xlsxCell("", 6)
+      ]);
+    } else {
+      evKeys.forEach(function(k) {
+        const ev = d.eventPerf[k];
+        sumRows.push([
+          xlsxCell(ev.title, 6),
+          xlsxCell(ev.category, 8),
+          xlsxCell(ev.qty, 9, "n"),
+          xlsxCell(Number(ev.rev.toFixed(2)), 11, "n"),
+          xlsxCell("", 6),
+          xlsxCell("Custom event entry", 6)
+        ]);
+      });
+    }
+    sumRows.push({
+      height: 22,
+      cells: [
+        xlsxCell("DONATIONS & EVENTS TOTAL", 12),
+        xlsxCell("", 12),
+        xlsxCell(d.eventsOnlyCount, 13, "n"),
+        xlsxCell(Number(d.eventsOnlyRev.toFixed(2)), 14, "n"),
+        xlsxCell("", 12),
+        xlsxCell("", 12)
+      ]
+    });
+
+    sumRows.push({ height: 10, cells: [] });
+
+    // Section 4: Cash Box & Bank Deposit History
+    addSectionBanner(sumRows, sumMerges, "4. CASH BOX & BANK DEPOSIT RECONCILIATION LOG");
+    sumRows.push({
+      height: 22,
+      cells: [
+        xlsxCell("Date / Time", 4),
+        xlsxCell("Action", 4),
+        xlsxCell("By Seller", 4),
+        xlsxCell("Before ($)", 5),
+        xlsxCell("Bank Drop ($)", 5),
+        xlsxCell("Left in Box ($)", 5)
+      ]
+    });
+    const hist = Array.isArray(cashBoxConfig.history) ? cashBoxConfig.history : [];
+    if (hist.length === 0) {
+      sumRows.push([
+        xlsxCell("No bank deposits logged yet", 6),
+        xlsxCell("-", 8), xlsxCell("-", 8), xlsxCell(0, 10, "n"), xlsxCell(0, 10, "n"), xlsxCell(0, 10, "n")
+      ]);
+    } else {
+      hist.forEach(function(h) {
+        sumRows.push([
+          xlsxCell(formatShortTimestamp(h.timestamp), 6),
+          xlsxCell(h.action || "Adjustment", 6),
+          xlsxCell(h.bySeller || "", 6),
+          xlsxCell(parseFloat(h.previousCash) || 0, 10, "n"),
+          xlsxCell(parseFloat(h.takenToBank) || 0, 11, "n"),
+          xlsxCell(parseFloat(h.leftInBox) || 0, 10, "n")
+        ]);
+      });
+    }
+
+    const summaryXml = buildXlsxWorksheetXml(sumWidths, sumRows, sumMerges, 2);
+
+    // TAB 2: COMPACT SALES LEDGER
+    const ledgerXml = buildSalesLedgerSheetXml(d.filteredSales, d.periodLabel, d.totalRev, d.totalUnits, d.keptChangeRev);
+
+    // TAB 3: SELLER & DIRECTORATE LEADERBOARDS (Side-by-side compact tables!)
+    const lbWidths = [24, 10, 11, 15, 4, 20, 10, 11, 15];
+    const lbMerges = ["A1:I1", "A2:I2", "A4:D4", "F4:I4"];
+    const lbRows = [
+      { height: 26, cells: [
+        xlsxCell("USTRANSCOM BOOSTER CLUB - SELLER & DIRECTORATE LEADERBOARDS", 1),
+        xlsxCell("", 1), xlsxCell("", 1), xlsxCell("", 1), xlsxCell("", 1), xlsxCell("", 1), xlsxCell("", 1), xlsxCell("", 1), xlsxCell("", 1)
+      ]},
+      { height: 20, cells: [
+        xlsxCell("Period: " + d.periodLabel, 2),
+        xlsxCell("", 2), xlsxCell("", 2), xlsxCell("", 2), xlsxCell("", 2), xlsxCell("", 2), xlsxCell("", 2), xlsxCell("", 2), xlsxCell("", 2)
+      ]},
+      { height: 8, cells: [] },
+      { height: 22, cells: [
+        xlsxCell("SALES BY SELLER / CASHIER", 3), xlsxCell("", 3), xlsxCell("", 3), xlsxCell("", 3),
+        xlsxCell("", 0),
+        xlsxCell("DIRECTORATE LEADERBOARD", 3), xlsxCell("", 3), xlsxCell("", 3), xlsxCell("", 3)
+      ]},
+      { height: 22, cells: [
+        xlsxCell("Seller Name", 4), xlsxCell("Orders", 5), xlsxCell("Merch Qty", 5), xlsxCell("Revenue", 5),
+        xlsxCell("", 0),
+        xlsxCell("Directorate", 4), xlsxCell("Orders", 5), xlsxCell("Merch Qty", 5), xlsxCell("Revenue", 5)
+      ]}
+    ];
+
+    const sortedSellers = Object.keys(d.sellerStats).sort(function(a, b) { return d.sellerStats[b].rev - d.sellerStats[a].rev; });
+    const sortedDirs = Object.keys(d.dirStats).sort(function(a, b) { return d.dirStats[b].rev - d.dirStats[a].rev; });
+    const maxLbRows = Math.max(sortedSellers.length, sortedDirs.length, 1);
+
+    for (let i = 0; i < maxLbRows; i++) {
+      const sKey = sortedSellers[i];
+      const dKey = sortedDirs[i];
+      const sCells = sKey
+        ? [xlsxCell(sKey, 6), xlsxCell(d.sellerStats[sKey].orders, 9, "n"), xlsxCell(d.sellerStats[sKey].units, 9, "n"), xlsxCell(Number(d.sellerStats[sKey].rev.toFixed(2)), 11, "n")]
+        : [xlsxCell("", 0), xlsxCell("", 0), xlsxCell("", 0), xlsxCell("", 0)];
+      const dCells = dKey
+        ? [xlsxCell(dKey, 6), xlsxCell(d.dirStats[dKey].orders, 9, "n"), xlsxCell(d.dirStats[dKey].units, 9, "n"), xlsxCell(Number(d.dirStats[dKey].rev.toFixed(2)), 11, "n")]
+        : [xlsxCell("", 0), xlsxCell("", 0), xlsxCell("", 0), xlsxCell("", 0)];
+      lbRows.push(sCells.concat([xlsxCell("", 0)], dCells));
+    }
+    const leaderboardsXml = buildXlsxWorksheetXml(lbWidths, lbRows, lbMerges, 5);
+
+    // TAB 4: COMPACT ITEM QUANTITY MATRIX (Shortened headers, narrow columns, isolated on Tab 4 so Tabs 1-3 never scroll!)
+    const matrixXml = buildItemMatrixSheetXml(d);
+
+    downloadWorkbookXlsx("booster-treasurer-report-" + d.fileSlug + ".xlsx", [
+      { name: "1. Executive Summary", xml: summaryXml },
+      { name: "2. Sales Ledger", xml: ledgerXml },
+      { name: "3. Leaderboards", xml: leaderboardsXml },
+      { name: "4. Item Qty Matrix", xml: matrixXml }
+    ]);
+  }
+
+  function exportCurrentViewXLSX() {
+    const d = computeTreasurerReportData();
+    if (logViewMode === "matrix") {
+      const matrixXml = buildItemMatrixSheetXml(d);
+      downloadWorkbookXlsx("booster-item-matrix-" + d.fileSlug + ".xlsx", [
+        { name: "Item Qty Matrix", xml: matrixXml }
+      ]);
+      return;
+    }
+    if (logViewMode === "breakdown") {
+      exportTreasurerWorkbookXLSX();
+      return;
+    }
+    const ledgerXml = buildSalesLedgerSheetXml(d.filteredSales, d.periodLabel, d.totalRev, d.totalUnits, d.keptChangeRev);
+    downloadWorkbookXlsx("booster-sales-ledger-" + d.fileSlug + ".xlsx", [
+      { name: "Sales Ledger", xml: ledgerXml }
+    ]);
   }
 
   function exportMasterBoosterReportCSV() {
@@ -6260,8 +7136,8 @@
     }
 
     csv += "SECTION 4: ORDER-BY-ORDER SALES & EVENTS MATRIX (" + csvEscape(periodLabel) + ")\n";
-    const headers = ["Order ID", "Date/Time", "Buyer Name", "Directorate", "Seller / Cashier", "Payment Method", "Order Total ($)", "Cash Paid ($)", "Change Given ($)", "Kept Change ($)", "Merch Qty", "Donations / Events ($)", "Event / Donation Details"]
-      .concat(allItemNames.map(function(n) { return csvEscape("Qty: " + n); }));
+    const headers = ["Order ID", "Date/Time", "Buyer", "Dir", "Seller", "Method", "Total ($)", "Paid ($)", "Change ($)", "Kept Chg ($)", "Qty", "Events ($)", "Event Details"]
+      .concat(allItemNames.map(function(n) { return csvEscape(shortenItemHeaderName(n)); }));
     csv += headers.join(",") + "\n";
 
     const colTotals = {};
@@ -6310,8 +7186,8 @@
     let csv = "";
 
     if (logViewMode === "matrix") {
-      const headers = ["Order ID", "Date/Time", "Buyer Name", "Directorate", "Seller", "Payment Method", "Total ($)", "Merch Qty", "Donations / Events ($)", "Event / Donation Details"]
-        .concat(allItemNames.map(function(n) { return csvEscape("Qty: " + n); }));
+      const headers = ["Order ID", "Date/Time", "Buyer", "Dir", "Seller", "Method", "Total ($)", "Qty", "Events ($)", "Event Details"]
+        .concat(allItemNames.map(function(n) { return csvEscape(shortenItemHeaderName(n)); }));
       csv += headers.join(",") + "\n";
       const colTotals = {};
       allItemNames.forEach(function(n) { colTotals[n] = 0; });
